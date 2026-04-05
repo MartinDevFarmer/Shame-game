@@ -325,16 +325,22 @@ function pickDuel(room, currentPlayer) {
 
 function getRandomChallenge(room, currentPlayer) {
   const roll = Math.random();
-  if (roll < 0.20) {
+  if (roll < 0.18) {
+    // Vérité — 18%
     return pickQuestion(room, currentPlayer);
-  } else if (roll < 0.45) {
+  } else if (roll < 0.38) {
+    // Action — 20%
     return pickDare(room, currentPlayer);
-  } else if (roll < 0.75) {
-    // Shot challenge — 30%
+  } else if (roll < 0.58) {
+    // Shot — 20%
     const shotCount = Math.floor(Math.random() * 3) + 1;
     return { challengeType: 'shot', text: `${shotCount} shot${shotCount > 1 ? 's' : ''} !`, shotCount, dareType: 'solo', partnerName: null };
+  } else if (roll < 0.78) {
+    // Gorgée — 20%
+    const sipCount = Math.floor(Math.random() * 5) + 1;
+    return { challengeType: 'gorgee', text: `${sipCount} gorgée${sipCount > 1 ? 's' : ''} !`, sipCount, dareType: 'solo', partnerName: null };
   } else {
-    // Duel — 25%
+    // Duel — 22%
     return pickDuel(room, currentPlayer);
   }
 }
@@ -511,8 +517,8 @@ io.on('connection', (socket) => {
       timerSeconds: 25
     });
 
-    // Shots and duels are mandatory — no accept/refuse timer, handled client-side
-    if (challenge.challengeType === 'shot' || challenge.challengeType === 'duel') {
+    // Shots, gorgées and duels are mandatory — no accept/refuse timer, handled client-side
+    if (challenge.challengeType === 'shot' || challenge.challengeType === 'gorgee' || challenge.challengeType === 'duel') {
       room.challengePhase = 'done';
       return;
     }

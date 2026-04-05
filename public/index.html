@@ -409,6 +409,40 @@
       letter-spacing: 2px;
     }
     .challenge-type.duel { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
+    .challenge-type.gorgee { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+    .cat-slot-item.cat-gorgee { color: #22c55e; }
+    /* Gorgee roulette */
+    .gorgee-roulette-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      margin: 20px auto;
+      max-width: 340px;
+    }
+    .gorgee-roulette-container.active { display: flex; }
+    .gorgee-display {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      border: 5px solid #22c55e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 4rem;
+      font-weight: 900;
+      background: radial-gradient(circle, #0a2e15, #05150a);
+      box-shadow: 0 0 40px rgba(34, 197, 94, 0.3), inset 0 0 30px rgba(0,0,0,0.5);
+      margin: 20px 0;
+      color: #22c55e;
+    }
+    .gorgee-label {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #22c55e;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-top: 8px;
+    }
 
     .challenge-card { background: var(--card); border-radius: 20px; padding: 28px 24px; width: 100%; max-width: 360px; text-align: center; border: 2px solid #2a2a4a; margin: 20px 0; }
     .challenge-type { display: inline-block; padding: 4px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
@@ -561,6 +595,12 @@
         <div class="shot-display" id="shotDisplay">
           <span class="shot-number" id="shotNumber">1</span>
         </div>
+      </div>
+      <!-- Gorgee roulette -->
+      <div class="gorgee-roulette-container" id="gorgeeRouletteSection">
+        <div class="challenge-player" id="gorgeePlayerName"></div>
+        <div class="gorgee-label">Nombre de gorgées</div>
+        <div class="gorgee-display" id="gorgeeDisplay">1</div>
       </div>
     </div>
 
@@ -861,9 +901,9 @@
     let timerInterval = null;
     let pendingResult = null;
 
-    const categories = ['Vérité', 'Action', 'Shot', 'Duel'];
-    const catClasses = { 'Vérité': 'cat-question', 'Action': 'cat-dare', 'Shot': 'cat-shot', 'Duel': 'cat-duel' };
-    const catMap = { question: 'Vérité', dare: 'Action', shot: 'Shot', duel: 'Duel' };
+    const categories = ['Vérité', 'Action', 'Shot', 'Gorgée', 'Duel'];
+    const catClasses = { 'Vérité': 'cat-question', 'Action': 'cat-dare', 'Shot': 'cat-shot', 'Gorgée': 'cat-gorgee', 'Duel': 'cat-duel' };
+    const catMap = { question: 'Vérité', dare: 'Action', shot: 'Shot', gorgee: 'Gorgée', duel: 'Duel' };
 
     function hideAllGameSections() {
       $('spinSection').style.display = 'none';
@@ -872,6 +912,7 @@
       $('duelSection').style.display = 'none';
       $('revealOverlay').classList.remove('active');
       $('shotRouletteSection').classList.remove('active');
+      $('gorgeeRouletteSection').classList.remove('active');
       $('catRouletteSection').classList.remove('active');
     }
 
@@ -956,6 +997,8 @@
         const type = data.challenge.challengeType;
         if (type === 'shot') {
           showShotRoulette(data);
+        } else if (type === 'gorgee') {
+          showGorgeeRoulette(data);
         } else if (type === 'duel') {
           showDuel(data);
         } else {
@@ -997,6 +1040,38 @@
       lastChallengeType = 'shot';
       const btn = $('nextTurnBtn');
       if (isHost) { btn.style.display = 'block'; btn.textContent = 'Shot bu ✓'; } else { btn.style.display = 'none'; }
+    }
+
+    // =================== GORGEE ROULETTE ===================
+    function showGorgeeRoulette(data) {
+      $('gorgeeRouletteSection').classList.add('active');
+      $('gorgeePlayerName').textContent = data.playerName;
+      const display = $('gorgeeDisplay');
+
+      const sipCount = data.challenge.sipCount;
+      let spinCount = 0;
+      const totalSpins = 25;
+      const si = setInterval(() => {
+        spinCount++;
+        display.textContent = (spinCount % 5) + 1;
+        if (spinCount >= totalSpins) {
+          clearInterval(si);
+          display.textContent = sipCount;
+          setTimeout(() => showGorgeeResult(data), 1500);
+        }
+      }, 100);
+    }
+
+    function showGorgeeResult(data) {
+      pendingResult = null;
+      hideAllGameSections();
+      $('acceptedSection').style.display = 'block';
+      $('acceptedIcon').textContent = '🍺';
+      const s = data.challenge.sipCount;
+      $('acceptedMsg').textContent = `${data.playerName} doit boire ${s} gorgée${s > 1 ? 's' : ''} !`;
+      lastChallengeType = 'gorgee';
+      const btn = $('nextTurnBtn');
+      if (isHost) { btn.style.display = 'block'; btn.textContent = 'Gorgées bues ✓'; } else { btn.style.display = 'none'; }
     }
 
     // =================== DUEL ===================
@@ -1204,7 +1279,7 @@
       const btn = $('nextTurnBtn');
       if (isHost) {
         btn.style.display = 'block';
-        btn.textContent = lastChallengeType === 'question' ? 'Question répondue ✓' : lastChallengeType === 'shot' ? 'Shot bu ✓' : 'Gage effectué ✓';
+        btn.textContent = lastChallengeType === 'question' ? 'Question répondue ✓' : lastChallengeType === 'shot' ? 'Shot bu ✓' : lastChallengeType === 'gorgee' ? 'Gorgées bues ✓' : 'Gage effectué ✓';
       } else {
         btn.style.display = 'none';
       }
