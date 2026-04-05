@@ -1232,6 +1232,23 @@
       $('revealBy').textContent = `Balancé par ${data.secret.submittedBy}`;
     });
 
+    // No secrets left → penalty: drink sips, then host clicks next
+    socket.on('no-secret-penalty', (data) => {
+      stopTimer();
+      hideAllGameSections();
+      $('acceptedSection').style.display = 'block';
+      $('acceptedIcon').textContent = '🍺';
+      $('acceptedMsg').textContent = `${data.playerName} n'a plus de secrets ! ${data.sips} gorgées à boire !`;
+      lastChallengeType = 'penalty';
+      const btn = $('nextTurnBtn');
+      if (isHost) {
+        btn.style.display = 'block';
+        btn.textContent = 'Gorgées bues ✓';
+      } else {
+        btn.style.display = 'none';
+      }
+    });
+
     socket.on('player-disconnected', (data) => { showToast(`${data.playerName} s'est déconnecté`); });
     socket.on('room-closed', () => { showToast('La room a été fermée'); showScreen('home'); });
   </script>

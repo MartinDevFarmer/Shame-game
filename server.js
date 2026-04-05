@@ -325,16 +325,16 @@ function pickDuel(room, currentPlayer) {
 
 function getRandomChallenge(room, currentPlayer) {
   const roll = Math.random();
-  if (roll < 0.25) {
+  if (roll < 0.20) {
     return pickQuestion(room, currentPlayer);
-  } else if (roll < 0.50) {
+  } else if (roll < 0.45) {
     return pickDare(room, currentPlayer);
   } else if (roll < 0.75) {
-    // Shot challenge
+    // Shot challenge — 30%
     const shotCount = Math.floor(Math.random() * 3) + 1;
     return { challengeType: 'shot', text: `${shotCount} shot${shotCount > 1 ? 's' : ''} !`, shotCount, dareType: 'solo', partnerName: null };
   } else {
-    // Duel
+    // Duel — 25%
     return pickDuel(room, currentPlayer);
   }
 }
@@ -506,7 +506,8 @@ io.on('connection', (socket) => {
     io.to(room.code).emit('spin-result', {
       playerName: currentPlayer.name,
       challenge,
-      canRefuse: hasSecret,
+      canRefuse: true,
+      hasSecret,
       timerSeconds: 25
     });
 
@@ -522,7 +523,13 @@ io.on('connection', (socket) => {
     // Auto-refuse after 25s
     room.challengeTimer = setTimeout(() => {
       if (room.currentChallenge && room.currentTurn && room.challengePhase === 'player1') {
-        revealSecretOf(room, currentPlayer.name);
+        const hasSecretNow = getSecretForPlayer(room, currentPlayer.name) !== null;
+        if (hasSecretNow) {
+          revealSecretOf(room, currentPlayer.name);
+        } else {
+          room.challengePhase = 'done';
+          io.to(room.code).emit('no-secret-penalty', { playerName: currentPlayer.name, sips: 3 });
+        }
       }
     }, 25000);
   });
@@ -545,14 +552,21 @@ io.on('connection', (socket) => {
         playerName: room.currentTurn.name,
         partnerName: challenge.partnerName,
         challenge,
-        canRefuse: hasPartnerSecret,
+        canRefuse: true,
+        hasSecret: hasPartnerSecret,
         timerSeconds: 25
       });
 
       // NEW timer for partner - 25 fresh seconds
       room.challengeTimer = setTimeout(() => {
         if (room.currentChallenge && room.currentPartner && room.challengePhase === 'partner') {
-          revealSecretOf(room, challenge.partnerName);
+          const hasPartnerSecretNow = getSecretForPlayer(room, challenge.partnerName) !== null;
+          if (hasPartnerSecretNow) {
+            revealSecretOf(room, challenge.partnerName);
+          } else {
+            room.challengePhase = 'done';
+            io.to(room.code).emit('no-secret-penalty', { playerName: challenge.partnerName, sips: 3 });
+          }
         }
       }, 25000);
 
@@ -580,13 +594,19 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Partner refuses the duo dare -> partner's secret revealed
+  // Partner refuses the duo dare -> partner's secret revealed or penalty
   socket.on('partner-refuse', (roomCode) => {
     const room = getRoom(roomCode);
     if (!room || !room.currentPartner || room.challengePhase !== 'partner') return;
     clearTimer(room);
     room.challengePhase = 'done';
-    revealSecretOf(room, room.currentPartner);
+
+    const hasSecret = getSecretForPlayer(room, room.currentPartner) !== null;
+    if (hasSecret) {
+      revealSecretOf(room, room.currentPartner);
+    } else {
+      io.to(room.code).emit('no-secret-penalty', { playerName: room.currentPartner, sips: 3 });
+    }
   });
 
   // Player 1 refuses
@@ -595,7 +615,14 @@ io.on('connection', (socket) => {
     if (!room || !room.currentTurn || room.challengePhase !== 'player1') return;
     clearTimer(room);
     room.challengePhase = 'done';
-    revealSecretOf(room, room.currentTurn.name);
+
+    const hasSecret = getSecretForPlayer(room, room.currentTurn.name) !== null;
+    if (hasSecret) {
+      revealSecretOf(room, room.currentTurn.name);
+    } else {
+      // No secrets left → penalty: 3 sips
+      io.to(room.code).emit('no-secret-penalty', { playerName: room.currentTurn.name, sips: 3 });
+    }
   });
 
   socket.on('next-turn', (roomCode) => {
