@@ -431,9 +431,12 @@ io.on('connection', (socket) => {
       timerSeconds: 10
     });
 
+    // Track which phase we're in: 'player1' or 'partner'
+    room.challengePhase = 'player1';
+
     // Auto-refuse after 10s
     room.challengeTimer = setTimeout(() => {
-      if (room.currentChallenge && room.currentTurn) {
+      if (room.currentChallenge && room.currentTurn && room.challengePhase === 'player1') {
         revealSecretOf(room, currentPlayer.name);
       }
     }, 10000);
@@ -442,13 +445,14 @@ io.on('connection', (socket) => {
   // Player 1 accepts
   socket.on('accept-challenge', (roomCode) => {
     const room = getRoom(roomCode);
-    if (!room || !room.currentTurn) return;
+    if (!room || !room.currentTurn || room.challengePhase !== 'player1') return;
     clearTimer(room);
 
     const challenge = room.currentChallenge;
 
     // If it's a duo dare, now ask partner
     if (challenge.challengeType === 'dare' && challenge.dareType === 'duo' && challenge.partnerName) {
+      room.challengePhase = 'partner';
       const partner = room.players.find(p => p.name === challenge.partnerName);
       const hasPartnerSecret = getSecretForPlayer(room, partner.name) !== null;
 
@@ -460,9 +464,9 @@ io.on('connection', (socket) => {
         timerSeconds: 10
       });
 
-      // Auto-refuse partner after 10s
+      // NEW timer for partner - 10 fresh seconds
       room.challengeTimer = setTimeout(() => {
-        if (room.currentChallenge && room.currentPartner) {
+        if (room.currentChallenge && room.currentPartner && room.challengePhase === 'partner') {
           revealSecretOf(room, challenge.partnerName);
         }
       }, 10000);
@@ -480,8 +484,9 @@ io.on('connection', (socket) => {
   // Partner accepts the duo dare
   socket.on('partner-accept', (roomCode) => {
     const room = getRoom(roomCode);
-    if (!room || !room.currentTurn) return;
+    if (!room || !room.currentTurn || room.challengePhase !== 'partner') return;
     clearTimer(room);
+    room.challengePhase = 'done';
 
     io.to(room.code).emit('challenge-accepted', {
       playerName: room.currentTurn.name,
@@ -494,16 +499,18 @@ io.on('connection', (socket) => {
   // Partner refuses the duo dare -> partner's secret revealed
   socket.on('partner-refuse', (roomCode) => {
     const room = getRoom(roomCode);
-    if (!room || !room.currentPartner) return;
+    if (!room || !room.currentPartner || room.challengePhase !== 'partner') return;
     clearTimer(room);
+    room.challengePhase = 'done';
     revealSecretOf(room, room.currentPartner);
   });
 
   // Player 1 refuses
   socket.on('refuse-challenge', (roomCode) => {
     const room = getRoom(roomCode);
-    if (!room || !room.currentTurn) return;
+    if (!room || !room.currentTurn || room.challengePhase !== 'player1') return;
     clearTimer(room);
+    room.challengePhase = 'done';
     revealSecretOf(room, room.currentTurn.name);
   });
 
