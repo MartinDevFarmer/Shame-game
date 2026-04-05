@@ -108,6 +108,42 @@ const dares = [
   { text: "Lèche la joue de {X}", type: 'duo' },
 ];
 
+// ============================================================
+// DUELS (math + culture générale)
+// ============================================================
+const duels = [
+  { question: "25 × 12 = ?", answer: "300" },
+  { question: "13 × 19 = ?", answer: "247" },
+  { question: "17 × 14 = ?", answer: "238" },
+  { question: "8 × 37 = ?", answer: "296" },
+  { question: "23 × 16 = ?", answer: "368" },
+  { question: "15 × 27 = ?", answer: "405" },
+  { question: "19 × 21 = ?", answer: "399" },
+  { question: "14 × 18 = ?", answer: "252" },
+  { question: "32 × 11 = ?", answer: "352" },
+  { question: "45 × 8 = ?", answer: "360" },
+  { question: "16 × 24 = ?", answer: "384" },
+  { question: "22 × 13 = ?", answer: "286" },
+  { question: "144 ÷ 12 = ?", answer: "12" },
+  { question: "√196 = ?", answer: "14" },
+  { question: "√225 = ?", answer: "15" },
+  { question: "Quelle est la capitale de l'Australie ?", answer: "Canberra" },
+  { question: "Combien d'os dans le corps humain adulte ?", answer: "206" },
+  { question: "En quelle année l'homme a marché sur la Lune ?", answer: "1969" },
+  { question: "Quel est le plus grand océan du monde ?", answer: "Pacifique" },
+  { question: "Combien de pays dans l'Union Européenne ?", answer: "27" },
+  { question: "Quelle est la planète la plus proche du Soleil ?", answer: "Mercure" },
+  { question: "Qui a peint la Joconde ?", answer: "Léonard de Vinci" },
+  { question: "Combien de joueurs dans une équipe de rugby ?", answer: "15" },
+  { question: "Quel est le plus long fleuve du monde ?", answer: "Le Nil" },
+  { question: "En quelle année a eu lieu la Révolution française ?", answer: "1789" },
+  { question: "Quelle est la formule chimique de l'eau ?", answer: "H2O" },
+  { question: "Combien de dents a un adulte ?", answer: "32" },
+  { question: "Quel pays a la plus grande population ?", answer: "L'Inde" },
+  { question: "Combien font 7 puissance 2 ?", answer: "49" },
+  { question: "Quelle est la monnaie du Japon ?", answer: "Le Yen" },
+];
+
 // --- Helper functions ---
 function generateRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -132,6 +168,7 @@ function createRoom(hostSocketId, hostName, hostGender) {
     secrets: {},
     usedQuestions: [],
     usedDares: [],
+    usedDuels: [],
     currentTurn: null,
     currentChallenge: null,
     currentPartner: null, // for duo dares
@@ -265,16 +302,40 @@ function pickDare(room, currentPlayer) {
   return { challengeType: 'dare', text: finalText, dareType: d.type, partnerName };
 }
 
+function pickDuel(room, currentPlayer) {
+  const validDuels = duels.filter(d => !room.usedDuels.includes(d.question));
+  if (validDuels.length === 0) {
+    room.usedDuels = [];
+    return pickDuel(room, currentPlayer);
+  }
+  const d = validDuels[Math.floor(Math.random() * validDuels.length)];
+  room.usedDuels.push(d.question);
+
+  // Pick an opponent (any other player)
+  const opponent = getRandomPlayer(room, [currentPlayer.name]);
+  return {
+    challengeType: 'duel',
+    text: d.question,
+    duelAnswer: d.answer,
+    opponentName: opponent ? opponent.name : null,
+    dareType: 'solo',
+    partnerName: null
+  };
+}
+
 function getRandomChallenge(room, currentPlayer) {
   const roll = Math.random();
-  if (roll < 0.35) {
+  if (roll < 0.25) {
     return pickQuestion(room, currentPlayer);
-  } else if (roll < 0.70) {
+  } else if (roll < 0.50) {
     return pickDare(room, currentPlayer);
-  } else {
+  } else if (roll < 0.75) {
     // Shot challenge
-    const shotCount = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
+    const shotCount = Math.floor(Math.random() * 3) + 1;
     return { challengeType: 'shot', text: `${shotCount} shot${shotCount > 1 ? 's' : ''} !`, shotCount, dareType: 'solo', partnerName: null };
+  } else {
+    // Duel
+    return pickDuel(room, currentPlayer);
   }
 }
 
@@ -449,8 +510,8 @@ io.on('connection', (socket) => {
       timerSeconds: 25
     });
 
-    // Shots are mandatory — no timer, no accept/refuse, just show result and wait for host next-turn
-    if (challenge.challengeType === 'shot') {
+    // Shots and duels are mandatory — no accept/refuse timer, handled client-side
+    if (challenge.challengeType === 'shot' || challenge.challengeType === 'duel') {
       room.challengePhase = 'done';
       return;
     }

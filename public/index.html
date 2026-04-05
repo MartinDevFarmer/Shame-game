@@ -228,6 +228,188 @@
     }
     .shot-glass-icon { font-size: 2rem; margin-right: 6px; }
 
+    /* Category roulette (second slot) */
+    .cat-roulette-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      margin: 10px auto;
+      max-width: 340px;
+      width: 90%;
+    }
+    .cat-roulette-container.active { display: flex; }
+    .cat-chosen-player {
+      font-size: 1.4rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--gold), #ffaa00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+    .cat-slot-frame {
+      border: 3px solid var(--gold);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #0a0515;
+      position: relative;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 0 20px rgba(255,215,0,0.2);
+      width: 240px;
+      margin: 10px 0;
+    }
+    .cat-slot-window { height: 70px; overflow: hidden; position: relative; }
+    .cat-slot-track { transition: transform 2.5s cubic-bezier(0.15, 0.60, 0.10, 1.00); }
+    .cat-slot-item {
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .cat-slot-item.cat-question { color: #4da6ff; }
+    .cat-slot-item.cat-dare { color: var(--accent); }
+    .cat-slot-item.cat-shot { color: var(--gold); }
+    .cat-slot-item.cat-duel { color: #a855f7; }
+    .cat-slot-highlight {
+      position: absolute;
+      inset: 0;
+      border: 2px solid var(--gold);
+      pointer-events: none;
+      box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.1);
+    }
+    .cat-slot-arrows {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0; height: 0;
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      z-index: 5;
+    }
+    .cat-arrow-left { left: -1px; border-right: 12px solid var(--gold); }
+    .cat-arrow-right { right: -1px; border-left: 12px solid var(--gold); }
+
+    /* Duel section */
+    .duel-card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 24px;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      border: 2px solid #a855f7;
+      margin: 16px 0;
+      box-shadow: 0 0 30px rgba(168, 85, 247, 0.15);
+    }
+    .duel-vs {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .duel-player-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--gold);
+    }
+    .duel-vs-text {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #a855f7;
+    }
+    .duel-question-text {
+      font-size: 1.6rem;
+      font-weight: 900;
+      margin: 16px 0;
+      color: var(--text);
+      line-height: 1.4;
+    }
+    .duel-answer-reveal {
+      display: none;
+      background: rgba(168, 85, 247, 0.15);
+      border: 2px solid #a855f7;
+      border-radius: 14px;
+      padding: 16px;
+      margin: 12px 0;
+    }
+    .duel-answer-reveal.active { display: block; }
+    .duel-answer-label {
+      font-size: 0.8rem;
+      color: #a855f7;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .duel-answer-value {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--gold);
+    }
+    .duel-loser-section {
+      display: none;
+      margin-top: 16px;
+    }
+    .duel-loser-section.active { display: block; }
+    .duel-loser-label {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .duel-loser-btns {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    .duel-loser-btn {
+      padding: 12px 20px;
+      border: 2px solid #a855f7;
+      border-radius: 14px;
+      background: var(--card);
+      color: var(--text);
+      font-family: 'Poppins', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .duel-loser-btn:hover { background: rgba(168, 85, 247, 0.2); }
+
+    /* Sip roulette */
+    .sip-roulette-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      margin: 16px 0;
+    }
+    .sip-roulette-container.active { display: flex; }
+    .sip-display {
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      border: 4px solid #a855f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      font-weight: 900;
+      background: radial-gradient(circle, #1a0a2e, #0a0515);
+      box-shadow: 0 0 30px rgba(168, 85, 247, 0.3);
+      margin: 14px 0;
+      color: #a855f7;
+    }
+    .sip-label {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #a855f7;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .challenge-type.duel { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
+
     .challenge-card { background: var(--card); border-radius: 20px; padding: 28px 24px; width: 100%; max-width: 360px; text-align: center; border: 2px solid #2a2a4a; margin: 20px 0; }
     .challenge-type { display: inline-block; padding: 4px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
     .challenge-type.question { background: rgba(0, 122, 255, 0.2); color: #4da6ff; }
@@ -359,12 +541,59 @@
           </div>
         </div>
       </div>
+      <!-- Category roulette (2nd roulette) -->
+      <div class="cat-roulette-container" id="catRouletteSection">
+        <div class="cat-chosen-player" id="catChosenPlayer"></div>
+        <div class="section-subtitle">Catégorie...</div>
+        <div class="cat-slot-frame">
+          <div class="cat-slot-arrows cat-arrow-left"></div>
+          <div class="cat-slot-arrows cat-arrow-right"></div>
+          <div class="cat-slot-window">
+            <div class="cat-slot-track" id="catSlotTrack"></div>
+            <div class="cat-slot-highlight"></div>
+          </div>
+        </div>
+      </div>
       <!-- Shot roulette -->
       <div class="shot-roulette-container" id="shotRouletteSection">
         <div class="challenge-player" id="shotPlayerName"></div>
         <div class="shot-label">Nombre de shots</div>
         <div class="shot-display" id="shotDisplay">
           <span class="shot-number" id="shotNumber">1</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Duel section -->
+    <div id="duelSection" style="display:none;">
+      <div class="duel-card">
+        <div class="challenge-type duel" style="margin-bottom:12px;">Duel</div>
+        <div class="duel-vs">
+          <div class="duel-player-name" id="duelPlayer1"></div>
+          <div class="duel-vs-text">VS</div>
+          <div class="duel-player-name" id="duelPlayer2"></div>
+        </div>
+        <div class="timer-ring" id="duelTimerRing">
+          <svg viewBox="0 0 80 80">
+            <circle class="bg" cx="40" cy="40" r="36"/>
+            <circle class="progress" id="duelTimerProgress" cx="40" cy="40" r="36"/>
+          </svg>
+          <div class="timer-number" id="duelTimerNumber">15</div>
+        </div>
+        <div class="duel-question-text" id="duelQuestionText"></div>
+        <div class="duel-answer-reveal" id="duelAnswerReveal">
+          <div class="duel-answer-label">Réponse</div>
+          <div class="duel-answer-value" id="duelAnswerValue"></div>
+        </div>
+        <div class="duel-loser-section" id="duelLoserSection">
+          <div class="duel-loser-label">Qui a perdu ?</div>
+          <div class="duel-loser-btns" id="duelLoserBtns"></div>
+        </div>
+        <div class="sip-roulette-container" id="sipRouletteSection">
+          <div class="sip-label" id="sipLoserName"></div>
+          <div class="sip-label">Nombre de gorgées</div>
+          <div class="sip-display" id="sipDisplay">0</div>
+          <button class="btn btn-primary" id="sipNextBtn" style="display:none;max-width:280px;margin-top:14px;" onclick="triggerNextTurn()">Gorgées bues ✓</button>
         </div>
       </div>
     </div>
@@ -632,12 +861,23 @@
     let timerInterval = null;
     let pendingResult = null;
 
-    socket.on('start-spin', (data) => {
-      $('spinSection').style.display = 'block';
+    const categories = ['Vérité', 'Action', 'Shot', 'Duel'];
+    const catClasses = { 'Vérité': 'cat-question', 'Action': 'cat-dare', 'Shot': 'cat-shot', 'Duel': 'cat-duel' };
+    const catMap = { question: 'Vérité', dare: 'Action', shot: 'Shot', duel: 'Duel' };
+
+    function hideAllGameSections() {
+      $('spinSection').style.display = 'none';
       $('challengeSection').style.display = 'none';
       $('acceptedSection').style.display = 'none';
+      $('duelSection').style.display = 'none';
       $('revealOverlay').classList.remove('active');
       $('shotRouletteSection').classList.remove('active');
+      $('catRouletteSection').classList.remove('active');
+    }
+
+    socket.on('start-spin', (data) => {
+      hideAllGameSections();
+      $('spinSection').style.display = 'block';
       buildSlotMachine(data.players);
       setTimeout(() => startSlotSpin(data.players), 800);
       setTimeout(() => socket.emit('request-spin-result', roomCode), 500);
@@ -670,20 +910,62 @@
         const offset = targetIndex * 100;
         track.style.transition = 'transform 3.5s cubic-bezier(0.15, 0.60, 0.10, 1.00)';
         track.style.transform = `translateY(-${offset}px)`;
-
-        // If it's a shot, show the shot roulette after the player roulette
-        if (pendingResult.challenge.challengeType === 'shot') {
-          setTimeout(() => showShotRoulette(pendingResult), 4200);
-        } else {
-          setTimeout(() => showChallenge(pendingResult), 4000);
-        }
+        // After player roulette lands, show category roulette
+        setTimeout(() => showCategoryRoulette(pendingResult), 4000);
       };
       waitForResult();
     }
 
+    // =================== CATEGORY ROULETTE ===================
+    function buildCategorySlot(targetCategory) {
+      const track = $('catSlotTrack');
+      let items = '';
+      // Build 30 items cycling through categories
+      for (let i = 0; i < 30; i++) {
+        const cat = categories[i % categories.length];
+        items += `<div class="cat-slot-item ${catClasses[cat]}">${cat}</div>`;
+      }
+      track.innerHTML = items;
+      track.style.transition = 'none';
+      track.style.transform = 'translateY(0)';
+    }
+
+    function showCategoryRoulette(data) {
+      const targetCat = catMap[data.challenge.challengeType];
+      $('catRouletteSection').classList.add('active');
+      $('catChosenPlayer').textContent = data.playerName;
+      buildCategorySlot(targetCat);
+
+      // Find target index in the slot
+      let targetIndex = -1;
+      for (let i = 24; i >= 16; i--) {
+        if (categories[i % categories.length] === targetCat) { targetIndex = i; break; }
+      }
+      if (targetIndex === -1) targetIndex = 20;
+
+      const track = $('catSlotTrack');
+      setTimeout(() => {
+        const offset = targetIndex * 70;
+        track.style.transition = 'transform 2.5s cubic-bezier(0.15, 0.60, 0.10, 1.00)';
+        track.style.transform = `translateY(-${offset}px)`;
+      }, 300);
+
+      // After category roulette lands, route to correct screen
+      setTimeout(() => {
+        $('catRouletteSection').classList.remove('active');
+        const type = data.challenge.challengeType;
+        if (type === 'shot') {
+          showShotRoulette(data);
+        } else if (type === 'duel') {
+          showDuel(data);
+        } else {
+          showChallenge(data);
+        }
+      }, 3200);
+    }
+
     // =================== SHOT ROULETTE ===================
     function showShotRoulette(data) {
-      // Hide the main slot, show shot roulette
       $('shotRouletteSection').classList.add('active');
       $('shotPlayerName').textContent = data.playerName;
       const display = $('shotDisplay');
@@ -693,14 +975,13 @@
       const shotCount = data.challenge.shotCount;
       let spinCount = 0;
       const totalSpins = 25;
-      const spinInterval = setInterval(() => {
+      const si = setInterval(() => {
         spinCount++;
         numberEl.textContent = (spinCount % 3) + 1;
         if (spinCount >= totalSpins) {
-          clearInterval(spinInterval);
+          clearInterval(si);
           display.classList.remove('spinning');
           numberEl.textContent = shotCount;
-          // After showing result, go to accepted section
           setTimeout(() => showShotResult(data), 1500);
         }
       }, 100);
@@ -708,28 +989,117 @@
 
     function showShotResult(data) {
       pendingResult = null;
-      $('spinSection').style.display = 'none';
-      $('shotRouletteSection').classList.remove('active');
-      $('challengeSection').style.display = 'none';
+      hideAllGameSections();
       $('acceptedSection').style.display = 'block';
       $('acceptedIcon').textContent = '🥃';
       const s = data.challenge.shotCount;
       $('acceptedMsg').textContent = `${data.playerName} doit boire ${s} shot${s > 1 ? 's' : ''} !`;
       lastChallengeType = 'shot';
-
       const btn = $('nextTurnBtn');
+      if (isHost) { btn.style.display = 'block'; btn.textContent = 'Shot bu ✓'; } else { btn.style.display = 'none'; }
+    }
+
+    // =================== DUEL ===================
+    let duelTimerInterval = null;
+    let currentDuelData = null;
+
+    function showDuel(data) {
+      pendingResult = null;
+      hideAllGameSections();
+      $('duelSection').style.display = 'block';
+      currentDuelData = data;
+
+      $('duelPlayer1').textContent = data.playerName;
+      $('duelPlayer2').textContent = data.challenge.opponentName || '???';
+      $('duelQuestionText').textContent = data.challenge.text;
+
+      // Reset duel state
+      $('duelAnswerReveal').classList.remove('active');
+      $('duelLoserSection').classList.remove('active');
+      $('sipRouletteSection').classList.remove('active');
+      $('sipNextBtn').style.display = 'none';
+
+      // Start 15s timer
+      startDuelTimer(15);
+    }
+
+    function startDuelTimer(seconds) {
+      if (duelTimerInterval) clearInterval(duelTimerInterval);
+      let remaining = seconds;
+      const circumference = 226;
+      const progress = $('duelTimerProgress');
+      const number = $('duelTimerNumber');
+      progress.style.transition = 'none';
+      progress.style.strokeDashoffset = '0';
+      progress.classList.remove('urgent');
+      number.classList.remove('urgent');
+      number.textContent = remaining;
+      progress.getBoundingClientRect();
+      progress.style.transition = 'stroke-dashoffset 1s linear';
+
+      duelTimerInterval = setInterval(() => {
+        remaining--;
+        number.textContent = remaining;
+        const offset = circumference * (1 - remaining / seconds);
+        progress.style.strokeDashoffset = offset;
+        if (remaining <= 3) { progress.classList.add('urgent'); number.classList.add('urgent'); }
+        if (remaining <= 0) {
+          clearInterval(duelTimerInterval);
+          duelTimerInterval = null;
+          // Reveal answer and show loser picker
+          revealDuelAnswer();
+        }
+      }, 1000);
+    }
+
+    function revealDuelAnswer() {
+      if (!currentDuelData) return;
+      $('duelAnswerReveal').classList.add('active');
+      $('duelAnswerValue').textContent = currentDuelData.challenge.duelAnswer;
+
+      // Show loser buttons (host only picks loser)
       if (isHost) {
-        btn.style.display = 'block';
-        btn.textContent = 'Shot bu ✓';
-      } else {
-        btn.style.display = 'none';
+        $('duelLoserSection').classList.add('active');
+        const btns = $('duelLoserBtns');
+        const p1 = currentDuelData.playerName;
+        const p2 = currentDuelData.challenge.opponentName;
+        btns.innerHTML = `
+          <button class="duel-loser-btn" onclick="pickDuelLoser('${p1}')">${p1}</button>
+          <button class="duel-loser-btn" onclick="pickDuelLoser('${p2}')">${p2}</button>
+        `;
       }
     }
 
+    function pickDuelLoser(loserName) {
+      $('duelLoserSection').classList.remove('active');
+      $('sipRouletteSection').classList.add('active');
+      $('sipLoserName').textContent = `${loserName} doit boire...`;
+
+      // Sip roulette: spin through 1-6
+      const sipDisplay = $('sipDisplay');
+      const maxSips = 6;
+      const targetSips = Math.floor(Math.random() * maxSips) + 1;
+      let spinCount = 0;
+      const totalSpins = 20;
+
+      const si = setInterval(() => {
+        spinCount++;
+        sipDisplay.textContent = (spinCount % maxSips) + 1;
+        if (spinCount >= totalSpins) {
+          clearInterval(si);
+          sipDisplay.textContent = targetSips;
+          // Show next button for host
+          if (isHost) {
+            $('sipNextBtn').style.display = 'block';
+          }
+        }
+      }, 100);
+    }
+
+    // =================== CHALLENGE (Vérité / Action) ===================
     function showChallenge(data) {
       pendingResult = null;
-      $('spinSection').style.display = 'none';
-      $('shotRouletteSection').classList.remove('active');
+      hideAllGameSections();
       $('challengeSection').style.display = 'block';
       $('partnerInfo').style.display = 'none';
 
@@ -737,10 +1107,8 @@
       const typeEl = $('challengeType');
       if (data.challenge.challengeType === 'question') {
         typeEl.textContent = 'Vérité';
-      } else if (data.challenge.challengeType === 'dare') {
-        typeEl.textContent = 'Action';
       } else {
-        typeEl.textContent = 'Shot';
+        typeEl.textContent = 'Action';
       }
       typeEl.className = 'challenge-type ' + data.challenge.challengeType;
       $('challengeText').textContent = data.challenge.text;
@@ -760,9 +1128,8 @@
     // --- PARTNER FLOW (duo dares) ---
     socket.on('waiting-for-partner', (data) => {
       stopTimer();
-      $('spinSection').style.display = 'none';
+      hideAllGameSections();
       $('challengeSection').style.display = 'block';
-      $('acceptedSection').style.display = 'none';
 
       $('challengePlayer').textContent = data.playerName;
       const typeEl = $('challengeType');
@@ -822,7 +1189,7 @@
 
     socket.on('challenge-accepted', (data) => {
       stopTimer();
-      $('challengeSection').style.display = 'none';
+      hideAllGameSections();
       $('acceptedSection').style.display = 'block';
       $('acceptedIcon').textContent = '✅';
       lastChallengeType = data.challenge ? data.challenge.challengeType : 'dare';
@@ -845,7 +1212,7 @@
 
     socket.on('challenge-timeout', (data) => {
       stopTimer();
-      $('challengeSection').style.display = 'none';
+      hideAllGameSections();
       $('acceptedSection').style.display = 'block';
       $('acceptedIcon').textContent = '⏰';
       $('acceptedMsg').textContent = `Temps écoulé pour ${data.playerName} !`;
@@ -853,8 +1220,7 @@
 
     socket.on('secret-revealed', (data) => {
       stopTimer();
-      $('challengeSection').style.display = 'none';
-      $('acceptedSection').style.display = 'none';
+      hideAllGameSections();
       $('revealOverlay').classList.add('active');
       $('revealPlayer').textContent = data.playerName;
       const body = $('revealBody');
