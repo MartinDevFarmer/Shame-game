@@ -266,11 +266,15 @@ function pickDare(room, currentPlayer) {
 }
 
 function getRandomChallenge(room, currentPlayer) {
-  const isQuestion = Math.random() > 0.5;
-  if (isQuestion) {
+  const roll = Math.random();
+  if (roll < 0.35) {
     return pickQuestion(room, currentPlayer);
-  } else {
+  } else if (roll < 0.70) {
     return pickDare(room, currentPlayer);
+  } else {
+    // Shot challenge
+    const shotCount = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
+    return { challengeType: 'shot', text: `${shotCount} shot${shotCount > 1 ? 's' : ''} !`, shotCount, dareType: 'solo', partnerName: null };
   }
 }
 
@@ -444,6 +448,12 @@ io.on('connection', (socket) => {
       canRefuse: hasSecret,
       timerSeconds: 25
     });
+
+    // Shots are mandatory — no timer, no accept/refuse, just show result and wait for host next-turn
+    if (challenge.challengeType === 'shot') {
+      room.challengePhase = 'done';
+      return;
+    }
 
     // Track which phase we're in: 'player1' or 'partner'
     room.challengePhase = 'player1';

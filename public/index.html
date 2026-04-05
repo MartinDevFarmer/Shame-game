@@ -81,16 +81,158 @@
     .add-secret-btn:hover { border-color: var(--accent); color: var(--accent); }
     .setup-progress { text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 16px; }
 
-    .slot-container { background: var(--card); border-radius: 20px; padding: 20px; margin: 30px auto; max-width: 280px; border: 3px solid var(--accent); position: relative; overflow: hidden; }
-    .slot-window { height: 80px; overflow: hidden; position: relative; border-radius: 12px; background: #1a1a35; }
+    /* ===== CASINO SLOT MACHINE ===== */
+    .slot-container {
+      background: linear-gradient(180deg, #1a0a2e 0%, #0d0620 50%, #1a0a2e 100%);
+      border-radius: 24px;
+      padding: 0;
+      margin: 20px auto;
+      max-width: 340px;
+      width: 90%;
+      border: 3px solid var(--gold);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 40px rgba(255, 215, 0, 0.3), 0 0 80px rgba(255, 45, 85, 0.15), inset 0 0 30px rgba(0,0,0,0.5);
+    }
+    .slot-top-bar {
+      background: linear-gradient(180deg, #ffd700, #cc8800);
+      padding: 10px 16px;
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 900;
+      color: #1a0a2e;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      position: relative;
+    }
+    .slot-top-bar::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-top: 6px solid #cc8800;
+    }
+    .slot-body { padding: 20px 16px; }
+    .slot-lights {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .slot-light {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      animation: bulbFlash 1.2s infinite;
+    }
+    .slot-light:nth-child(odd) { background: var(--accent); animation-delay: 0s; }
+    .slot-light:nth-child(even) { background: var(--gold); animation-delay: 0.6s; }
+    @keyframes bulbFlash {
+      0%, 100% { opacity: 1; box-shadow: 0 0 8px currentColor; }
+      50% { opacity: 0.3; box-shadow: none; }
+    }
+    .slot-frame {
+      border: 3px solid #444;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #0a0515;
+      position: relative;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 2px 8px rgba(255,215,0,0.2);
+    }
+    .slot-window { height: 100px; overflow: hidden; position: relative; }
     .slot-track { transition: transform 3.5s cubic-bezier(0.15, 0.60, 0.10, 1.00); }
-    .slot-item { height: 80px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; font-weight: 700; padding: 0 20px; }
-    .slot-highlight { position: absolute; inset: 0; border: 3px solid var(--gold); border-radius: 12px; pointer-events: none; box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.1); }
+    .slot-item {
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      font-weight: 900;
+      padding: 0 20px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 50%, rgba(255,255,255,0.03) 100%);
+      text-shadow: 0 0 10px rgba(255, 45, 85, 0.5);
+    }
+    .slot-highlight {
+      position: absolute;
+      inset: 0;
+      border: 2px solid var(--gold);
+      pointer-events: none;
+      box-shadow: inset 0 0 30px rgba(255, 215, 0, 0.15);
+      background: linear-gradient(180deg, rgba(255,215,0,0.08) 0%, transparent 30%, transparent 70%, rgba(255,215,0,0.08) 100%);
+    }
+    .slot-arrow-left, .slot-arrow-right {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0; height: 0;
+      border-top: 12px solid transparent;
+      border-bottom: 12px solid transparent;
+      z-index: 5;
+      filter: drop-shadow(0 0 6px rgba(255,215,0,0.6));
+    }
+    .slot-arrow-left { left: -1px; border-right: 14px solid var(--gold); }
+    .slot-arrow-right { right: -1px; border-left: 14px solid var(--gold); }
+    .slot-bottom-lights {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    /* Shot mini-roulette */
+    .shot-roulette-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      margin: 20px auto;
+      max-width: 340px;
+    }
+    .shot-roulette-container.active { display: flex; }
+    .shot-display {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      border: 5px solid var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 4rem;
+      font-weight: 900;
+      background: radial-gradient(circle, #1a0a2e, #0a0515);
+      box-shadow: 0 0 40px rgba(255, 215, 0, 0.3), inset 0 0 30px rgba(0,0,0,0.5);
+      margin: 20px 0;
+      position: relative;
+    }
+    .shot-display .shot-number {
+      text-shadow: 0 0 20px var(--gold), 0 0 40px var(--gold);
+      color: var(--gold);
+    }
+    .shot-display.spinning .shot-number {
+      animation: shotSpin 0.1s steps(1) infinite;
+    }
+    @keyframes shotSpin {
+      0% { content: '1'; }
+      33% { content: '2'; }
+      66% { content: '3'; }
+    }
+    .shot-label {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-top: 8px;
+    }
+    .shot-glass-icon { font-size: 2rem; margin-right: 6px; }
 
     .challenge-card { background: var(--card); border-radius: 20px; padding: 28px 24px; width: 100%; max-width: 360px; text-align: center; border: 2px solid #2a2a4a; margin: 20px 0; }
     .challenge-type { display: inline-block; padding: 4px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
     .challenge-type.question { background: rgba(0, 122, 255, 0.2); color: #4da6ff; }
     .challenge-type.dare { background: rgba(255, 45, 85, 0.2); color: var(--accent); }
+    .challenge-type.shot { background: rgba(255, 215, 0, 0.2); color: var(--gold); }
     .challenge-text { font-size: 1.15rem; line-height: 1.5; margin-bottom: 20px; }
     .challenge-player { font-size: 1.4rem; font-weight: 700; background: linear-gradient(135deg, var(--gold), #ffaa00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 12px; }
     .challenge-buttons { display: flex; gap: 12px; margin-top: 16px; }
@@ -195,9 +337,34 @@
     <div id="spinSection">
       <div class="section-subtitle" style="margin-top:20px;">La roulette tourne...</div>
       <div class="slot-container">
-        <div class="slot-window">
-          <div class="slot-track" id="slotTrack"></div>
-          <div class="slot-highlight"></div>
+        <div class="slot-top-bar">Shame Machine</div>
+        <div class="slot-body">
+          <div class="slot-lights">
+            <div class="slot-light"></div><div class="slot-light"></div><div class="slot-light"></div>
+            <div class="slot-light"></div><div class="slot-light"></div><div class="slot-light"></div>
+            <div class="slot-light"></div><div class="slot-light"></div><div class="slot-light"></div>
+          </div>
+          <div class="slot-frame">
+            <div class="slot-arrow-left"></div>
+            <div class="slot-arrow-right"></div>
+            <div class="slot-window">
+              <div class="slot-track" id="slotTrack"></div>
+              <div class="slot-highlight"></div>
+            </div>
+          </div>
+          <div class="slot-bottom-lights">
+            <div class="slot-light"></div><div class="slot-light"></div><div class="slot-light"></div>
+            <div class="slot-light"></div><div class="slot-light"></div><div class="slot-light"></div>
+            <div class="slot-light"></div><div class="slot-light"></div><div class="slot-light"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Shot roulette -->
+      <div class="shot-roulette-container" id="shotRouletteSection">
+        <div class="challenge-player" id="shotPlayerName"></div>
+        <div class="shot-label">Nombre de shots</div>
+        <div class="shot-display" id="shotDisplay">
+          <span class="shot-number" id="shotNumber">1</span>
         </div>
       </div>
     </div>
@@ -470,6 +637,7 @@
       $('challengeSection').style.display = 'none';
       $('acceptedSection').style.display = 'none';
       $('revealOverlay').classList.remove('active');
+      $('shotRouletteSection').classList.remove('active');
       buildSlotMachine(data.players);
       setTimeout(() => startSlotSpin(data.players), 800);
       setTimeout(() => socket.emit('request-spin-result', roomCode), 500);
@@ -499,23 +667,81 @@
           if (playerList[i % playerList.length].name === targetName) { targetIndex = i; break; }
         }
         if (targetIndex === -1) targetIndex = 25;
-        const offset = targetIndex * 80;
+        const offset = targetIndex * 100;
         track.style.transition = 'transform 3.5s cubic-bezier(0.15, 0.60, 0.10, 1.00)';
         track.style.transform = `translateY(-${offset}px)`;
-        setTimeout(() => showChallenge(pendingResult), 4000);
+
+        // If it's a shot, show the shot roulette after the player roulette
+        if (pendingResult.challenge.challengeType === 'shot') {
+          setTimeout(() => showShotRoulette(pendingResult), 4200);
+        } else {
+          setTimeout(() => showChallenge(pendingResult), 4000);
+        }
       };
       waitForResult();
+    }
+
+    // =================== SHOT ROULETTE ===================
+    function showShotRoulette(data) {
+      // Hide the main slot, show shot roulette
+      $('shotRouletteSection').classList.add('active');
+      $('shotPlayerName').textContent = data.playerName;
+      const display = $('shotDisplay');
+      const numberEl = $('shotNumber');
+      display.classList.add('spinning');
+
+      const shotCount = data.challenge.shotCount;
+      let spinCount = 0;
+      const totalSpins = 25;
+      const spinInterval = setInterval(() => {
+        spinCount++;
+        numberEl.textContent = (spinCount % 3) + 1;
+        if (spinCount >= totalSpins) {
+          clearInterval(spinInterval);
+          display.classList.remove('spinning');
+          numberEl.textContent = shotCount;
+          // After showing result, go to accepted section
+          setTimeout(() => showShotResult(data), 1500);
+        }
+      }, 100);
+    }
+
+    function showShotResult(data) {
+      pendingResult = null;
+      $('spinSection').style.display = 'none';
+      $('shotRouletteSection').classList.remove('active');
+      $('challengeSection').style.display = 'none';
+      $('acceptedSection').style.display = 'block';
+      $('acceptedIcon').textContent = '🥃';
+      const s = data.challenge.shotCount;
+      $('acceptedMsg').textContent = `${data.playerName} doit boire ${s} shot${s > 1 ? 's' : ''} !`;
+      lastChallengeType = 'shot';
+
+      const btn = $('nextTurnBtn');
+      if (isHost) {
+        btn.style.display = 'block';
+        btn.textContent = 'Shot bu ✓';
+      } else {
+        btn.style.display = 'none';
+      }
     }
 
     function showChallenge(data) {
       pendingResult = null;
       $('spinSection').style.display = 'none';
+      $('shotRouletteSection').classList.remove('active');
       $('challengeSection').style.display = 'block';
       $('partnerInfo').style.display = 'none';
 
       $('challengePlayer').textContent = data.playerName;
       const typeEl = $('challengeType');
-      typeEl.textContent = data.challenge.challengeType === 'question' ? 'Vérité' : 'Action';
+      if (data.challenge.challengeType === 'question') {
+        typeEl.textContent = 'Vérité';
+      } else if (data.challenge.challengeType === 'dare') {
+        typeEl.textContent = 'Action';
+      } else {
+        typeEl.textContent = 'Shot';
+      }
       typeEl.className = 'challenge-type ' + data.challenge.challengeType;
       $('challengeText').textContent = data.challenge.text;
 
@@ -611,7 +837,7 @@
       const btn = $('nextTurnBtn');
       if (isHost) {
         btn.style.display = 'block';
-        btn.textContent = lastChallengeType === 'question' ? 'Question répondue ✓' : 'Gage effectué ✓';
+        btn.textContent = lastChallengeType === 'question' ? 'Question répondue ✓' : lastChallengeType === 'shot' ? 'Shot bu ✓' : 'Gage effectué ✓';
       } else {
         btn.style.display = 'none';
       }
