@@ -272,20 +272,32 @@ io.on('connection', (socket) => {
     });
 
     if (allDone) {
-      // Start the game!
-      room.phase = 'game';
-      // Randomize turn order
-      room.turnOrder = [...room.players].sort(() => Math.random() - 0.5);
-      room.turnIndex = 0;
-      io.to(room.code).emit('phase-change', { phase: 'game' });
-      // Start first spin after a short delay
-      setTimeout(() => {
-        io.to(room.code).emit('start-spin', {
-          players: getPlayerNames(room)
-        });
-      }, 1500);
+      startGame(room);
     }
   });
+
+  // Host force-starts the game (skip players who haven't submitted)
+  socket.on('force-start-game', (roomCode) => {
+    const room = getRoom(roomCode);
+    if (!room || socket.id !== room.hostId) return;
+    if (room.phase !== 'setup') return;
+    // Need at least 1 player done
+    const donePlayers = room.players.filter(p => p.setupDone);
+    if (donePlayers.length < 1) return;
+    startGame(room);
+  });
+
+  function startGame(room) {
+    room.phase = 'game';
+    room.turnOrder = [...room.players].sort(() => Math.random() - 0.5);
+    room.turnIndex = 0;
+    io.to(room.code).emit('phase-change', { phase: 'game' });
+    setTimeout(() => {
+      io.to(room.code).emit('start-spin', {
+        players: getPlayerNames(room)
+      });
+    }, 1500);
+  }
 
   // Roulette has finished spinning, server decides result
   socket.on('request-spin-result', (roomCode) => {
@@ -306,14 +318,28 @@ io.on('connection', (socket) => {
     io.to(room.code).emit('spin-result', {
       playerName: currentPlayer.name,
       challenge,
-      canRefuse: hasSecret
+      canRefuse: hasSecret,
+      timerSeconds: 10
     });
+
+    // Auto-refuse after 10 seconds if no response
+    room.challengeTimer = setTimeout(() => {
+      if (room.currentChallenge && room.currentTurn) {
+        handleRefuse(room);
+      }
+    }, 10000);
   });
 
   // Player accepts the challenge
   socket.on('accept-challenge', (roomCode) => {
     const room = getRoom(roomCode);
-    if (!room) return;
+    if (!room || !room.currentTurn) return;
+
+    // Clear the timer
+    if (room.challengeTimer) {
+      clearTimeout(room.challengeTimer);
+      room.challengeTimer = null;
+    }
 
     io.to(room.code).emit('challenge-accepted', {
       playerName: room.currentTurn.name,
@@ -327,8 +353,18 @@ io.on('connection', (socket) => {
   // Player refuses -> reveal a secret
   socket.on('refuse-challenge', (roomCode) => {
     const room = getRoom(roomCode);
-    if (!room) return;
+    if (!room || !room.currentTurn) return;
 
+    // Clear the timer
+    if (room.challengeTimer) {
+      clearTimeout(room.challengeTimer);
+      room.challengeTimer = null;
+    }
+
+    handleRefuse(room);
+  });
+
+  function handleRefuse(room) {
     const secret = getSecretForPlayer(room, room.currentTurn.name);
     if (secret) {
       room.revealedSecrets.push({ ...secret, target: room.currentTurn.name });
@@ -336,11 +372,16 @@ io.on('connection', (socket) => {
         playerName: room.currentTurn.name,
         secret
       });
+    } else {
+      // No secret available, just show timeout
+      io.to(room.code).emit('challenge-timeout', {
+        playerName: room.currentTurn.name
+      });
     }
 
     // Move to next turn after viewing time
     setTimeout(() => nextTurn(room), 8000);
-  });
+  }
 
   // Next turn
   function nextTurn(room) {

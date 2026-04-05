@@ -535,6 +535,40 @@
     }
     @keyframes toastIn { from { opacity:0; transform: translateX(-50%) translateY(20px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
     @keyframes toastOut { to { opacity:0; transform: translateX(-50%) translateY(20px); } }
+
+    /* --- TIMER --- */
+    .timer-ring {
+      width: 80px; height: 80px;
+      margin: 16px auto;
+      position: relative;
+    }
+    .timer-ring svg {
+      transform: rotate(-90deg);
+      width: 80px; height: 80px;
+    }
+    .timer-ring circle {
+      fill: none;
+      stroke-width: 6;
+    }
+    .timer-ring .bg { stroke: #2a2a4a; }
+    .timer-ring .progress {
+      stroke: var(--accent);
+      stroke-linecap: round;
+      stroke-dasharray: 226;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 1s linear;
+    }
+    .timer-ring .progress.urgent { stroke: var(--danger); }
+    .timer-number {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      font-weight: 900;
+    }
+    .timer-number.urgent { color: var(--danger); }
   </style>
 </head>
 <body>
@@ -598,6 +632,7 @@
       <div class="spinner"></div>
       <div>Secrets envoyés ! En attente des autres joueurs...</div>
       <div class="setup-progress" id="setupProgressWaiting"></div>
+      <button class="btn btn-primary" id="forceStartBtn" style="display:none;max-width:280px;margin-top:20px;">Lancer quand même</button>
     </div>
   </div>
 
@@ -618,6 +653,13 @@
     <div id="challengeSection" style="display:none;">
       <div class="challenge-card">
         <div class="challenge-player" id="challengePlayer"></div>
+        <div class="timer-ring" id="timerRing">
+          <svg viewBox="0 0 80 80">
+            <circle class="bg" cx="40" cy="40" r="36"/>
+            <circle class="progress" id="timerProgress" cx="40" cy="40" r="36"/>
+          </svg>
+          <div class="timer-number" id="timerNumber">10</div>
+        </div>
         <div class="challenge-type" id="challengeType"></div>
         <div class="challenge-text" id="challengeText"></div>
         <div class="challenge-buttons" id="challengeButtons"></div>
@@ -855,7 +897,16 @@
       const msg = `${data.done}/${data.total} joueurs prêts`;
       $('setupProgress').textContent = msg;
       $('setupProgressWaiting').textContent = msg;
+
+      // Show force-start button for host if at least 1 player is done
+      if (isHost && data.done >= 1 && data.done < data.total) {
+        $('forceStartBtn').style.display = 'block';
+      }
     });
+
+    $('forceStartBtn').onclick = () => {
+      socket.emit('force-start-game', roomCode);
+    };
 
     // =================== GAME ===================
     let spinTimeout;
@@ -928,6 +979,8 @@
       waitForResult();
     }
 
+    let timerInterval = null;
+
     function showChallenge(data) {
       pendingResult = null;
       $('spinSection').style.display = 'none';
@@ -940,7 +993,6 @@
       $('challengeText').textContent = data.challenge.text;
 
       const btns = $('challengeButtons');
-      // Only the chosen player can answer
       if (data.playerName === myName) {
         btns.innerHTML = `
           <button class="btn btn-success" onclick="acceptChallenge()">J'accepte ✅</button>
@@ -949,23 +1001,82 @@
       } else {
         btns.innerHTML = `<div class="section-subtitle">C'est au tour de ${data.playerName}...</div>`;
       }
+
+      // Start the 10-second timer
+      startTimer(10);
+    }
+
+    function startTimer(seconds) {
+      if (timerInterval) clearInterval(timerInterval);
+
+      let remaining = seconds;
+      const circumference = 2 * Math.PI * 36; // 226
+      const progress = $('timerProgress');
+      const number = $('timerNumber');
+
+      // Reset
+      progress.style.transition = 'none';
+      progress.style.strokeDashoffset = '0';
+      progress.classList.remove('urgent');
+      number.classList.remove('urgent');
+      number.textContent = remaining;
+
+      // Force reflow
+      progress.getBoundingClientRect();
+      progress.style.transition = 'stroke-dashoffset 1s linear';
+
+      timerInterval = setInterval(() => {
+        remaining--;
+        number.textContent = remaining;
+
+        const offset = circumference * (1 - remaining / seconds);
+        progress.style.strokeDashoffset = offset;
+
+        if (remaining <= 3) {
+          progress.classList.add('urgent');
+          number.classList.add('urgent');
+        }
+
+        if (remaining <= 0) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
     }
 
     function acceptChallenge() {
+      stopTimer();
       socket.emit('accept-challenge', roomCode);
     }
 
     function refuseChallenge() {
+      stopTimer();
       socket.emit('refuse-challenge', roomCode);
     }
 
     socket.on('challenge-accepted', (data) => {
+      stopTimer();
       $('challengeSection').style.display = 'none';
       $('acceptedSection').style.display = 'block';
       $('acceptedMsg').textContent = `${data.playerName} a accepté !`;
     });
 
+    socket.on('challenge-timeout', (data) => {
+      stopTimer();
+      $('challengeSection').style.display = 'none';
+      $('acceptedSection').style.display = 'block';
+      $('acceptedMsg').textContent = `Temps écoulé pour ${data.playerName} ! Pas de secret dispo...`;
+    });
+
     socket.on('secret-revealed', (data) => {
+      stopTimer();
       $('challengeSection').style.display = 'none';
       $('revealOverlay').classList.add('active');
       $('revealPlayer').textContent = data.playerName;
