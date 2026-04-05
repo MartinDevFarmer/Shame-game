@@ -225,6 +225,8 @@
     <div id="acceptedSection" style="display:none; text-align:center; margin-top:40px;">
       <div style="font-size:3rem;" id="acceptedIcon">✅</div>
       <div class="section-title" id="acceptedMsg"></div>
+      <div class="gap"></div>
+      <button class="btn btn-primary" id="nextTurnBtn" style="display:none;max-width:300px;margin:16px auto;" onclick="triggerNextTurn()"></button>
     </div>
   </div>
 
@@ -567,16 +569,30 @@
 
     function acceptChallenge() { stopTimer(); socket.emit('accept-challenge', roomCode); }
     function refuseChallenge() { stopTimer(); socket.emit('refuse-challenge', roomCode); }
+    function triggerNextTurn() { socket.emit('next-turn', roomCode); }
+
+    let lastChallengeType = null;
 
     socket.on('challenge-accepted', (data) => {
       stopTimer();
       $('challengeSection').style.display = 'none';
       $('acceptedSection').style.display = 'block';
       $('acceptedIcon').textContent = '✅';
+      lastChallengeType = data.challenge ? data.challenge.challengeType : 'dare';
+
       if (data.partnerName) {
         $('acceptedMsg').textContent = `${data.playerName} et ${data.partnerName} ont accepté !`;
       } else {
         $('acceptedMsg').textContent = `${data.playerName} a accepté !`;
+      }
+
+      // Show "next" button for host
+      const btn = $('nextTurnBtn');
+      if (isHost) {
+        btn.style.display = 'block';
+        btn.textContent = lastChallengeType === 'question' ? 'Question répondue ✓' : 'Gage effectué ✓';
+      } else {
+        btn.style.display = 'none';
       }
     });
 

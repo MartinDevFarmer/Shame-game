@@ -475,12 +475,12 @@ io.on('connection', (socket) => {
       }, 25000);
 
     } else {
-      // Solo challenge accepted
+      // Solo challenge accepted - wait for host to click "next"
+      room.challengePhase = 'done';
       io.to(room.code).emit('challenge-accepted', {
         playerName: room.currentTurn.name,
         challenge
       });
-      setTimeout(() => nextTurn(room), 3000);
     }
   });
 
@@ -496,7 +496,6 @@ io.on('connection', (socket) => {
       partnerName: room.currentPartner,
       challenge: room.currentChallenge
     });
-    setTimeout(() => nextTurn(room), 5000);
   });
 
   // Partner refuses the duo dare -> partner's secret revealed
