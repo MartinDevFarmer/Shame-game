@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Shame Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a1a;
+      --card: #151530;
+      --accent: #ff2d55;
+      --accent2: #ff6b35;
+      --gold: #ffd700;
+      --text: #ffffff;
+      --text-muted: #8888aa;
+      --success: #34c759;
+      --danger: #ff3b30;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100dvh;
+      padding: 20px;
+      animation: fadeIn 0.4s ease;
+    }
+    .screen.active { display: flex; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* --- TITLE --- */
+    .logo {
+      font-size: 2.5rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-top: 60px;
+      margin-bottom: 8px;
+      letter-spacing: -1px;
+    }
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 40px;
+    }
+
+    /* --- INPUTS & BUTTONS --- */
+    input[type="text"], input[type="file"] {
+      width: 100%;
+      max-width: 320px;
+      padding: 14px 18px;
+      border: 2px solid #2a2a4a;
+      border-radius: 14px;
+      background: var(--card);
+      color: var(--text);
+      font-family: 'Poppins', sans-serif;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    input:focus { border-color: var(--accent); }
+
+    .btn {
+      padding: 14px 32px;
+      border: none;
+      border-radius: 14px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      max-width: 320px;
+    }
+    .btn:active { transform: scale(0.96); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+    }
+    .btn-secondary {
+      background: var(--card);
+      color: var(--text);
+      border: 2px solid #2a2a4a;
+    }
+    .btn-success {
+      background: linear-gradient(135deg, #34c759, #30b350);
+      color: white;
+    }
+    .btn-danger {
+      background: linear-gradient(135deg, var(--danger), #cc2200);
+      color: white;
+    }
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .gap { height: 14px; }
+    .gap-sm { height: 8px; }
+
+    /* --- HOME --- */
+    #home { justify-content: flex-start; }
+    .home-buttons { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 320px; }
+
+    /* --- LOBBY --- */
+    .room-code-display {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 20px 40px;
+      text-align: center;
+      margin: 20px 0;
+    }
+    .room-code-label { font-size: 0.85rem; color: var(--text-muted); }
+    .room-code-value {
+      font-size: 2.8rem;
+      font-weight: 900;
+      letter-spacing: 8px;
+      background: linear-gradient(135deg, var(--gold), #ffaa00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .player-list {
+      width: 100%;
+      max-width: 360px;
+      margin: 16px 0;
+    }
+    .player-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card);
+      border: 1px solid #2a2a4a;
+      border-radius: 30px;
+      padding: 8px 16px;
+      margin: 4px;
+      font-size: 0.9rem;
+    }
+    .player-chip .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+
+    /* --- SETUP --- */
+    .setup-container {
+      width: 100%;
+      max-width: 380px;
+    }
+    .target-select {
+      width: 100%;
+      padding: 14px 18px;
+      border: 2px solid #2a2a4a;
+      border-radius: 14px;
+      background: var(--card);
+      color: var(--text);
+      font-family: 'Poppins', sans-serif;
+      font-size: 1rem;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    .secret-entry {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 10px 0;
+      border: 1px solid #2a2a4a;
+    }
+    .secret-entry .type-label {
+      font-size: 0.8rem;
+      color: var(--accent);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 12px;
+      border: 2px solid #2a2a4a;
+      border-radius: 10px;
+      background: #1a1a35;
+      color: var(--text);
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+      resize: vertical;
+    }
+    textarea:focus { border-color: var(--accent); }
+
+    .photo-upload-area {
+      border: 2px dashed #3a3a5a;
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: border-color 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .photo-upload-area:hover { border-color: var(--accent); }
+    .photo-upload-area input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .photo-upload-area img {
+      max-width: 100%;
+      max-height: 150px;
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+
+    .add-secret-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      border: 2px dashed #3a3a5a;
+      border-radius: 14px;
+      color: var(--text-muted);
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.9rem;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    .add-secret-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    .setup-progress {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 16px;
+    }
+
+    /* --- GAME / ROULETTE --- */
+    .roulette-container {
+      width: 300px;
+      height: 300px;
+      position: relative;
+      margin: 30px auto;
+    }
+    .roulette-wheel {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 4px solid var(--accent);
+      position: relative;
+      overflow: hidden;
+      transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+    }
+    .roulette-segment {
+      position: absolute;
+      width: 50%;
+      height: 50%;
+      transform-origin: 100% 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .roulette-segment span {
+      transform: rotate(var(--text-rotate));
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+      position: absolute;
+      top: 30%;
+      left: 20%;
+    }
+    .roulette-pointer {
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-top: 25px solid var(--gold);
+      z-index: 10;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    }
+
+    /* Simple roulette using names list */
+    .roulette-names {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+      height: 60px;
+      position: relative;
+      margin: 30px 0;
+    }
+    .roulette-names-inner {
+      transition: transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+    }
+    .roulette-name-item {
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    /* Slot machine roulette */
+    .slot-container {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 20px;
+      margin: 30px auto;
+      max-width: 280px;
+      border: 3px solid var(--accent);
+      position: relative;
+      overflow: hidden;
+    }
+    .slot-window {
+      height: 80px;
+      overflow: hidden;
+      position: relative;
+      border-radius: 12px;
+      background: #1a1a35;
+    }
+    .slot-track {
+      transition: transform 3.5s cubic-bezier(0.15, 0.60, 0.10, 1.00);
+    }
+    .slot-item {
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      font-weight: 700;
+      padding: 0 20px;
+    }
+    .slot-highlight {
+      position: absolute;
+      inset: 0;
+      border: 3px solid var(--gold);
+      border-radius: 12px;
+      pointer-events: none;
+      box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.1);
+    }
+
+    /* --- CHALLENGE CARD --- */
+    .challenge-card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      border: 2px solid #2a2a4a;
+      margin: 20px 0;
+    }
+    .challenge-type {
+      display: inline-block;
+      padding: 4px 16px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+    }
+    .challenge-type.question {
+      background: rgba(0, 122, 255, 0.2);
+      color: #4da6ff;
+    }
+    .challenge-type.dare {
+      background: rgba(255, 45, 85, 0.2);
+      color: var(--accent);
+    }
+    .challenge-text {
+      font-size: 1.15rem;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+    .challenge-player {
+      font-size: 1.4rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--gold), #ffaa00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+    .challenge-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .challenge-buttons .btn { flex: 1; max-width: none; }
+
+    /* --- SECRET REVEAL --- */
+    .reveal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.92);
+      z-index: 100;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+      animation: fadeIn 0.5s ease;
+    }
+    .reveal-overlay.active { display: flex; }
+
+    .reveal-header {
+      font-size: 1.2rem;
+      color: var(--danger);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 24px;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .reveal-content {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 24px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+      border: 2px solid var(--danger);
+    }
+    .reveal-content img {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 12px;
+      margin: 12px 0;
+    }
+    .reveal-text {
+      font-size: 1.1rem;
+      line-height: 1.5;
+      margin: 12px 0;
+    }
+    .reveal-by {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 12px;
+    }
+
+    /* --- WAITING OVERLAY --- */
+    .waiting {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 10, 26, 0.95);
+      z-index: 50;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+    .waiting.active { display: flex; }
+    .spinner {
+      width: 50px; height: 50px;
+      border: 4px solid #2a2a4a;
+      border-top: 4px solid var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* --- MISC --- */
+    .error-msg {
+      color: var(--danger);
+      font-size: 0.85rem;
+      margin-top: 8px;
+      text-align: center;
+    }
+    .section-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin: 20px 0 12px;
+      text-align: center;
+    }
+    .section-subtitle {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .tag-host { background: rgba(255, 215, 0, 0.2); color: var(--gold); }
+
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--card);
+      border: 1px solid #2a2a4a;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      z-index: 200;
+      animation: toastIn 0.3s ease, toastOut 0.3s ease 2.5s forwards;
+    }
+    @keyframes toastIn { from { opacity:0; transform: translateX(-50%) translateY(20px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+    @keyframes toastOut { to { opacity:0; transform: translateX(-50%) translateY(20px); } }
+  </style>
+</head>
+<body>
+  <!-- ====== HOME SCREEN ====== -->
+  <div id="home" class="screen active">
+    <div class="logo">SHAME GAME</div>
+    <div class="subtitle">Le jeu qui met tes potes à nu</div>
+
+    <div class="home-buttons">
+      <input type="text" id="playerNameInput" placeholder="Ton prénom" maxlength="20" autocomplete="off">
+      <div class="gap-sm"></div>
+      <button class="btn btn-primary" id="createRoomBtn">Créer une partie</button>
+      <div class="gap-sm"></div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="roomCodeInput" placeholder="Code" maxlength="4" style="max-width:120px;text-transform:uppercase;text-align:center;letter-spacing:4px;font-weight:700;">
+        <button class="btn btn-secondary" id="joinRoomBtn" style="flex:1;">Rejoindre</button>
+      </div>
+      <div id="homeError" class="error-msg"></div>
+    </div>
+  </div>
+
+  <!-- ====== LOBBY ====== -->
+  <div id="lobby" class="screen">
+    <div class="section-title">Salle d'attente</div>
+
+    <div class="room-code-display">
+      <div class="room-code-label">Code de la partie</div>
+      <div class="room-code-value" id="lobbyCode"></div>
+    </div>
+
+    <div class="section-subtitle">Joueurs connectés</div>
+    <div class="player-list" id="lobbyPlayers"></div>
+
+    <div style="margin-top:auto; padding-bottom:20px; width:100%; max-width:320px;">
+      <button class="btn btn-primary" id="startGameBtn" style="display:none;">Lancer la partie</button>
+      <p class="section-subtitle" id="waitingHost" style="display:none;">En attente du lancement...</p>
+    </div>
+  </div>
+
+  <!-- ====== SETUP PHASE ====== -->
+  <div id="setup" class="screen">
+    <div class="section-title">Phase secrète 🤫</div>
+    <div class="section-subtitle">Choisis un joueur et balance ses pires secrets</div>
+
+    <div class="setup-container">
+      <select class="target-select" id="targetSelect">
+        <option value="">Choisis ta victime...</option>
+      </select>
+
+      <div id="secretsList"></div>
+
+      <button class="add-secret-btn" id="addAnecdoteBtn">+ Ajouter une anecdote</button>
+      <button class="add-secret-btn" id="addPhotoBtn">+ Ajouter une photo</button>
+
+      <div class="gap"></div>
+      <button class="btn btn-primary" id="submitSecretsBtn" disabled>Valider mes secrets</button>
+      <div class="setup-progress" id="setupProgress"></div>
+    </div>
+
+    <div class="waiting" id="setupWaiting">
+      <div class="spinner"></div>
+      <div>Secrets envoyés ! En attente des autres joueurs...</div>
+      <div class="setup-progress" id="setupProgressWaiting"></div>
+    </div>
+  </div>
+
+  <!-- ====== GAME PHASE ====== -->
+  <div id="game" class="screen">
+    <div class="logo" style="font-size:1.5rem;margin-top:30px;">SHAME GAME</div>
+
+    <div id="spinSection">
+      <div class="section-subtitle" style="margin-top:20px;">La roulette tourne...</div>
+      <div class="slot-container" id="slotMachine">
+        <div class="slot-window">
+          <div class="slot-track" id="slotTrack"></div>
+          <div class="slot-highlight"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="challengeSection" style="display:none;">
+      <div class="challenge-card">
+        <div class="challenge-player" id="challengePlayer"></div>
+        <div class="challenge-type" id="challengeType"></div>
+        <div class="challenge-text" id="challengeText"></div>
+        <div class="challenge-buttons" id="challengeButtons"></div>
+      </div>
+    </div>
+
+    <div id="acceptedSection" style="display:none; text-align:center; margin-top:40px;">
+      <div style="font-size:3rem;">✅</div>
+      <div class="section-title" id="acceptedMsg"></div>
+    </div>
+  </div>
+
+  <!-- ====== SECRET REVEAL OVERLAY ====== -->
+  <div class="reveal-overlay" id="revealOverlay">
+    <div class="reveal-header">💀 SECRET RÉVÉLÉ 💀</div>
+    <div class="reveal-content">
+      <div class="challenge-player" id="revealPlayer"></div>
+      <div id="revealBody"></div>
+      <div class="reveal-by" id="revealBy"></div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    // --- State ---
+    let myName = '';
+    let roomCode = '';
+    let isHost = false;
+    let players = [];
+    let secrets = []; // local secrets being built in setup
+    let uploadedPhotos = {}; // id -> url
+
+    // --- DOM refs ---
+    const $ = id => document.getElementById(id);
+
+    // --- Screen management ---
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      $(id).classList.add('active');
+    }
+
+    function showToast(msg) {
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 3000);
+    }
+
+    // =================== HOME ===================
+    $('createRoomBtn').onclick = () => {
+      const name = $('playerNameInput').value.trim();
+      if (!name) { $('homeError').textContent = 'Entre ton prénom !'; return; }
+      myName = name;
+      isHost = true;
+      socket.emit('create-room', name, (res) => {
+        if (res.success) {
+          roomCode = res.roomCode;
+          players = res.players;
+          renderLobby();
+          showScreen('lobby');
+        }
+      });
+    };
+
+    $('joinRoomBtn').onclick = () => {
+      const name = $('playerNameInput').value.trim();
+      const code = $('roomCodeInput').value.trim().toUpperCase();
+      if (!name) { $('homeError').textContent = 'Entre ton prénom !'; return; }
+      if (!code) { $('homeError').textContent = 'Entre le code de la room !'; return; }
+      myName = name;
+      socket.emit('join-room', { roomCode: code, playerName: name }, (res) => {
+        if (res.success) {
+          roomCode = res.roomCode;
+          players = res.players;
+          renderLobby();
+          showScreen('lobby');
+        } else {
+          $('homeError').textContent = res.error;
+        }
+      });
+    };
+
+    // Enter key on inputs
+    $('playerNameInput').onkeydown = e => { if (e.key === 'Enter') $('createRoomBtn').click(); };
+    $('roomCodeInput').onkeydown = e => { if (e.key === 'Enter') $('joinRoomBtn').click(); };
+
+    // =================== LOBBY ===================
+    function renderLobby() {
+      $('lobbyCode').textContent = roomCode;
+      $('lobbyPlayers').innerHTML = players.map((p, i) =>
+        `<div class="player-chip"><span class="dot"></span>${p}${i === 0 ? ' <span class="tag tag-host">HOST</span>' : ''}</div>`
+      ).join('');
+
+      if (isHost) {
+        $('startGameBtn').style.display = 'block';
+        $('waitingHost').style.display = 'none';
+        $('startGameBtn').disabled = players.length < 2;
+      } else {
+        $('startGameBtn').style.display = 'none';
+        $('waitingHost').style.display = 'block';
+      }
+    }
+
+    socket.on('player-joined', (data) => {
+      players = data.players;
+      renderLobby();
+      showToast('Un joueur a rejoint !');
+    });
+
+    $('startGameBtn').onclick = () => {
+      socket.emit('start-setup', roomCode);
+    };
+
+    // =================== SETUP ===================
+    socket.on('phase-change', (data) => {
+      if (data.phase === 'setup') {
+        players = data.players;
+        renderSetup();
+        showScreen('setup');
+      } else if (data.phase === 'game') {
+        showScreen('game');
+      }
+    });
+
+    function renderSetup() {
+      const select = $('targetSelect');
+      select.innerHTML = '<option value="">Choisis ta victime...</option>';
+      players.forEach(p => {
+        if (p !== myName) {
+          const opt = document.createElement('option');
+          opt.value = p;
+          opt.textContent = p;
+          select.appendChild(opt);
+        }
+      });
+      secrets = [];
+      renderSecrets();
+    }
+
+    let secretIdCounter = 0;
+    $('addAnecdoteBtn').onclick = () => {
+      secrets.push({ id: ++secretIdCounter, type: 'anecdote', content: '' });
+      renderSecrets();
+    };
+
+    $('addPhotoBtn').onclick = () => {
+      secrets.push({ id: ++secretIdCounter, type: 'photo', content: '' });
+      renderSecrets();
+    };
+
+    function renderSecrets() {
+      const list = $('secretsList');
+      list.innerHTML = '';
+      secrets.forEach((s, i) => {
+        const div = document.createElement('div');
+        div.className = 'secret-entry';
+        if (s.type === 'anecdote') {
+          div.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div class="type-label">📝 Anecdote</div>
+              <button onclick="removeSecret(${s.id})" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.2rem;">✕</button>
+            </div>
+            <textarea placeholder="Raconte le pire truc que tu sais sur cette personne..." oninput="updateSecret(${s.id}, this.value)">${s.content}</textarea>
+          `;
+        } else {
+          div.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div class="type-label">📸 Photo</div>
+              <button onclick="removeSecret(${s.id})" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.2rem;">✕</button>
+            </div>
+            <div class="photo-upload-area" id="photo-area-${s.id}">
+              ${s.content ? `<img src="${s.content}">` : '📷 Tape pour ajouter une photo'}
+              <input type="file" accept="image/*" onchange="uploadPhoto(${s.id}, this)">
+            </div>
+          `;
+        }
+        list.appendChild(div);
+      });
+      validateSetup();
+    }
+
+    function removeSecret(id) {
+      secrets = secrets.filter(s => s.id !== id);
+      renderSecrets();
+    }
+
+    function updateSecret(id, value) {
+      const s = secrets.find(s => s.id === id);
+      if (s) s.content = value;
+      validateSetup();
+    }
+
+    async function uploadPhoto(id, input) {
+      const file = input.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append('photo', file);
+      try {
+        const res = await fetch('/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.url) {
+          const s = secrets.find(s => s.id === id);
+          if (s) s.content = data.url;
+          renderSecrets();
+        }
+      } catch (e) {
+        showToast('Erreur upload photo');
+      }
+    }
+
+    function validateSetup() {
+      const target = $('targetSelect').value;
+      const hasSecrets = secrets.length > 0 && secrets.every(s => s.content.trim());
+      $('submitSecretsBtn').disabled = !(target && hasSecrets);
+    }
+    $('targetSelect').onchange = validateSetup;
+
+    $('submitSecretsBtn').onclick = () => {
+      const target = $('targetSelect').value;
+      socket.emit('submit-secret', {
+        roomCode,
+        targetPlayer: target,
+        secrets: secrets.map(s => ({ type: s.type, content: s.content }))
+      }, (res) => {
+        if (res.success) {
+          $('setupWaiting').classList.add('active');
+        }
+      });
+    };
+
+    socket.on('setup-progress', (data) => {
+      const msg = `${data.done}/${data.total} joueurs prêts`;
+      $('setupProgress').textContent = msg;
+      $('setupProgressWaiting').textContent = msg;
+    });
+
+    // =================== GAME ===================
+    let spinTimeout;
+
+    socket.on('start-spin', (data) => {
+      $('spinSection').style.display = 'block';
+      $('challengeSection').style.display = 'none';
+      $('acceptedSection').style.display = 'none';
+      $('revealOverlay').classList.remove('active');
+
+      buildSlotMachine(data.players);
+
+      // Spin after a short delay
+      setTimeout(() => {
+        startSlotSpin(data.players);
+      }, 800);
+
+      // Request result from server (server decides who)
+      setTimeout(() => {
+        socket.emit('request-spin-result', roomCode);
+      }, 500);
+    });
+
+    let pendingResult = null;
+
+    socket.on('spin-result', (data) => {
+      pendingResult = data;
+    });
+
+    function buildSlotMachine(playerNames) {
+      const track = $('slotTrack');
+      // Build lots of repeated names for the spin effect
+      let items = '';
+      for (let i = 0; i < 40; i++) {
+        const name = playerNames[i % playerNames.length];
+        items += `<div class="slot-item">${name}</div>`;
+      }
+      track.innerHTML = items;
+      track.style.transition = 'none';
+      track.style.transform = 'translateY(0)';
+    }
+
+    function startSlotSpin(playerNames) {
+      const waitForResult = () => {
+        if (!pendingResult) {
+          setTimeout(waitForResult, 100);
+          return;
+        }
+
+        const targetName = pendingResult.playerName;
+        const track = $('slotTrack');
+
+        // Find last occurrence of target in the track
+        let targetIndex = -1;
+        for (let i = 30; i >= 20; i--) {
+          if (playerNames[i % playerNames.length] === targetName) {
+            targetIndex = i;
+            break;
+          }
+        }
+        if (targetIndex === -1) targetIndex = 25; // fallback
+
+        const offset = targetIndex * 80; // 80px per item
+        track.style.transition = 'transform 3.5s cubic-bezier(0.15, 0.60, 0.10, 1.00)';
+        track.style.transform = `translateY(-${offset}px)`;
+
+        // Show challenge after spin ends
+        setTimeout(() => showChallenge(pendingResult), 4000);
+      };
+      waitForResult();
+    }
+
+    function showChallenge(data) {
+      pendingResult = null;
+      $('spinSection').style.display = 'none';
+      $('challengeSection').style.display = 'block';
+
+      $('challengePlayer').textContent = data.playerName;
+      const typeEl = $('challengeType');
+      typeEl.textContent = data.challenge.type === 'question' ? '❓ Question' : '🎯 Gage';
+      typeEl.className = 'challenge-type ' + data.challenge.type;
+      $('challengeText').textContent = data.challenge.text;
+
+      const btns = $('challengeButtons');
+      // Only the chosen player can answer
+      if (data.playerName === myName) {
+        btns.innerHTML = `
+          <button class="btn btn-success" onclick="acceptChallenge()">J'accepte ✅</button>
+          ${data.canRefuse ? `<button class="btn btn-danger" onclick="refuseChallenge()">Je refuse 💀</button>` : ''}
+        `;
+      } else {
+        btns.innerHTML = `<div class="section-subtitle">C'est au tour de ${data.playerName}...</div>`;
+      }
+    }
+
+    function acceptChallenge() {
+      socket.emit('accept-challenge', roomCode);
+    }
+
+    function refuseChallenge() {
+      socket.emit('refuse-challenge', roomCode);
+    }
+
+    socket.on('challenge-accepted', (data) => {
+      $('challengeSection').style.display = 'none';
+      $('acceptedSection').style.display = 'block';
+      $('acceptedMsg').textContent = `${data.playerName} a accepté !`;
+    });
+
+    socket.on('secret-revealed', (data) => {
+      $('challengeSection').style.display = 'none';
+      $('revealOverlay').classList.add('active');
+      $('revealPlayer').textContent = data.playerName;
+
+      const body = $('revealBody');
+      if (data.secret.type === 'photo') {
+        body.innerHTML = `<img src="${data.secret.content}" alt="Photo embarrassante">`;
+      } else {
+        body.innerHTML = `<div class="reveal-text">${data.secret.content}</div>`;
+      }
+      $('revealBy').textContent = `Balancé par ${data.secret.submittedBy}`;
+    });
+
+    socket.on('player-disconnected', (data) => {
+      showToast(`${data.playerName} s'est déconnecté`);
+    });
+
+    socket.on('room-closed', () => {
+      showToast('La room a été fermée');
+      showScreen('home');
+    });
+  </script>
+</body>
+</html>
