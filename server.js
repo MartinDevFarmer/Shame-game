@@ -9,15 +9,14 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  maxHttpBufferSize: 10e6 // 10MB for image uploads
+  maxHttpBufferSize: 10e6
 });
 
 const PORT = process.env.PORT || 3000;
 
-// --- Storage ---
-const rooms = {}; // roomCode -> roomState
+const rooms = {};
 
-// Multer config for photo uploads
+// Multer config
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const dir = path.join(__dirname, 'public', 'uploads');
@@ -29,83 +28,84 @@ const storage = multer.diskStorage({
     cb(null, `${uuidv4()}${ext}`);
   }
 });
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB max
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-// --- Static files ---
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// --- Photo upload endpoint ---
 app.post('/upload', upload.single('photo'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   res.json({ url: `/uploads/${req.file.filename}` });
 });
 
-// --- Questions & Dares Database ---
+// ============================================================
+// QUESTIONS (Vérité)
+// type: 'solo' | 'targeted' (needs {X}) | 'choice' (needs {X1},{X2})
+// gender: 'any' | 'F' | 'M' (who can receive this question)
+// oppositeX: true = {X} must be opposite gender
+// ============================================================
 const questions = [
-  "Quel est ton plus gros mensonge que tu n'as jamais avoué ?",
-  "Quelle est la chose la plus embarrassante que tu aies faite en soirée ?",
-  "Quel est ton crush secret dans cette pièce ou parmi nos amis ?",
-  "Quel est le truc le plus bizarre que tu as googlé récemment ?",
-  "Raconte ton pire date ou rendez-vous amoureux.",
-  "Quel est le message le plus gênant que tu aies envoyé par erreur ?",
-  "Si tu devais classer les joueurs du plus au moins beau, quel serait ton classement ?",
-  "Quelle est la chose la plus puérile que tu fais encore en secret ?",
-  "Quel est ton plus gros regret amoureux ?",
-  "Quelle est la chose la plus chère que tu aies cassée chez quelqu'un ?",
-  "Quel est le secret que tu caches à tes parents ?",
-  "Raconte la fois où tu as le plus eu honte de toi.",
-  "Quel est le mensonge que tu racontes le plus souvent ?",
-  "Quelle est la chose la plus folle que tu aies faite par amour ?",
-  "Quel est ton guilty pleasure le plus inavouable ?",
-  "Si tu devais embrasser un joueur ici, ce serait qui ?",
-  "Quel est le truc le plus nul que tu aies fait pour impressionner quelqu'un ?",
-  "Quelle est ta plus grande peur irrationnelle ?",
-  "Quel est le pire cadeau que tu aies jamais fait ?",
-  "Raconte un truc que tu as fait et dont tu n'es vraiment pas fier.",
-  "Quel est ton plus gros red flag en couple ?",
-  "Quelle est la chose la plus méchante que tu aies dite à quelqu'un ?",
-  "Quel est le texto le plus embarrassant dans ton téléphone en ce moment ?",
-  "Raconte la pire excuse bidon que tu as donnée pour annuler un plan.",
-  "Quel est le truc le plus gênant que tes parents ont découvert ?",
-  "Si tu devais avouer un truc à quelqu'un ici, ce serait quoi et à qui ?",
-  "Quelle est la rumeur la plus folle qui a circulé sur toi ?",
-  "Quel est le truc le plus ridicule pour lequel tu as pleuré ?",
-  "Quelle est ta plus grosse arnaque ou ton plus gros mytho ?",
-  "Raconte une histoire que tu n'as jamais racontée à personne ici."
+  { text: "Tu préfères pécho {X1} ou {X2} ?", type: 'choice', gender: 'any', oppositeX: true },
+  { text: "As-tu déjà avalé du sperme ?", type: 'solo', gender: 'any' },
+  { text: "Quel est ton bodycount ?", type: 'solo', gender: 'any' },
+  { text: "As-tu déjà fait un plan à 3 ?", type: 'solo', gender: 'any' },
+  { text: "Quels seraient les deux personnes ici présentes que tu choisirais pour un plan à 3 ?", type: 'solo', gender: 'any' },
+  { text: "Quelle est ta plus grosse honte durant un rapport sexuel ?", type: 'solo', gender: 'any' },
+  { text: "Quel est ton dernier mensonge ?", type: 'solo', gender: 'any' },
+  { text: "À quel âge as-tu perdu ta virginité ?", type: 'solo', gender: 'any' },
+  { text: "{Y} lâche une vérité sur toi (un truc banger)", type: 'reveal', gender: 'any' },
+  { text: "Qu'est-ce que tu trouves le plus moche physiquement chez {X} (ses yeux, ses cheveux, ses dents...) ?", type: 'targeted', gender: 'any', oppositeX: false },
+  { text: "Est-ce que lors d'une soirée bien arrosée tu pourrais pécho {X} ?", type: 'targeted', gender: 'any', oppositeX: true },
+  { text: "Est-ce que tu pourrais coucher avec quelqu'un du sexe opposé dans la pièce ?", type: 'solo', gender: 'any' },
+  { text: "Quel est ton plus gros fantasme ?", type: 'solo', gender: 'any' },
+  { text: "Tu préfères quand ça tape dans le fond ou quand ça effleure le clitoris ?", type: 'solo', gender: 'F' },
+  { text: "Tu préfères sucer ou branler ?", type: 'solo', gender: 'F' },
+  { text: "Tu préfères faire un cuni ou doigter ?", type: 'solo', gender: 'M' },
+  { text: "Est-ce que pour toi c'est important que la personne avec qui tu couches soit rasée ?", type: 'solo', gender: 'any' },
+  { text: "As-tu déjà eu des MST ?", type: 'solo', gender: 'any' },
+  { text: "As-tu déjà eu envie de te faire quelqu'un ici ?", type: 'solo', gender: 'any' },
+  { text: "Tu préfères (amicalement) {X1} ou {X2} ?", type: 'choice', gender: 'any', oppositeX: false },
+  { text: "Cite deux défauts (moral ou physique) de {X}.", type: 'targeted', gender: 'any', oppositeX: false },
+  { text: "Quelle est la personne la plus jeune que tu t'es faite ?", type: 'solo', gender: 'any' },
+  { text: "Quelle est la personne la plus vieille que tu t'es faite ?", type: 'solo', gender: 'any' },
+  { text: "Combien de personnes as-tu embrassé ?", type: 'solo', gender: 'any' },
+  { text: "As-tu déjà eu un orgasme ?", type: 'solo', gender: 'any' },
+  { text: "Combien de fois tu te branles par semaine ?", type: 'solo', gender: 'any' },
+  { text: "Est-ce que tu te doigtes toute seule ?", type: 'solo', gender: 'F' },
+  { text: "As-tu déjà eu un rapport anal ?", type: 'solo', gender: 'any' },
 ];
 
+// ============================================================
+// DARES (Action)
+// type: 'solo' | 'duo' (needs {X} opposite gender, double validation)
+// ============================================================
 const dares = [
-  "Envoie le dernier selfie de ta galerie dans le groupe de tes amis.",
-  "Appelle le dernier contact de ton historique et dis-lui que tu l'aimes.",
-  "Fais 20 pompes maintenant.",
-  "Imite un des joueurs, les autres doivent deviner qui.",
-  "Poste une story Instagram avec un texte dicté par le groupe.",
-  "Montre ton temps d'écran de la semaine.",
-  "Laisse un joueur envoyer un message depuis ton téléphone.",
-  "Fais une déclaration d'amour enflammée à la personne à ta gauche.",
-  "Danse pendant 30 secondes sans musique.",
-  "Montre la dernière photo de ta galerie à tout le monde.",
-  "Fais un TikTok choisi par le groupe.",
-  "Mange quelque chose de bizarre que le groupe choisit.",
-  "Appelle un ex et mets sur haut-parleur pendant 30 secondes.",
-  "Laisse un joueur choisir ta photo de profil pour 24h.",
-  "Envoie 'Tu me manques' à la 5ème personne de tes contacts.",
-  "Imite la personne à ta droite pendant 2 minutes.",
-  "Fais un compliment gênant à chaque joueur.",
-  "Montre ton historique de recherche YouTube.",
-  "Parle avec un accent pendant les 3 prochains tours.",
-  "Fais une battle de danse avec le joueur de ton choix.",
-  "Raconte ta pire anecdote avec la voix d'un commentateur sportif.",
-  "Envoie un vocal de 10 secondes en chantant à ton dernier contact WhatsApp.",
-  "Fais le tour de la pièce en marchant comme un crabe.",
-  "Laisse le groupe écrire un tweet/post depuis ton compte.",
-  "Garde les yeux fermés pendant tout le prochain tour.",
-  "Fais un discours de remerciement comme si tu recevais un Oscar.",
-  "Montre la conversation la plus récente de tes DM.",
-  "Échange de téléphone avec un autre joueur pendant 2 tours.",
-  "Fais 10 squats en racontant ta journée.",
-  "Mime ton emoji le plus utilisé, les autres doivent deviner."
+  { text: "Embrasse {X} sur la joue", type: 'duo' },
+  { text: "Lèche le lobe de l'oreille de {X}", type: 'duo' },
+  { text: "Fais un massage à {X} pendant les 2 prochaines questions", type: 'duo' },
+  { text: "Refais la scène de Dirty Dancing avec {X}", type: 'duo' },
+  { text: "Envoie une gifle à {X}", type: 'duo' },
+  { text: "{X} te smack", type: 'duo' },
+  { text: "Ziar pendant au moins 5 secondes {X}", type: 'duo' },
+  { text: "{X} te met une fessée", type: 'duo' },
+  { text: "Assieds-toi sur {X} pendant les deux prochaines questions", type: 'duo' },
+  { text: "Suce le doigt de {X}", type: 'duo' },
+  { text: "Fais une danse hyper gênante pendant 15 secondes", type: 'solo' },
+  { text: "{X} te fait un suçon", type: 'duo' },
+  { text: "Embrasse {X} dans le cou pendant 10 secondes", type: 'duo' },
+  { text: "Dis une chose excitante dans l'oreille de {X}", type: 'duo' },
+  { text: "Croque l'orteil de {X} (sans chaussette)", type: 'duo' },
+  { text: "Juge l'odeur corporelle de {X}", type: 'duo' },
+  { text: "Fais la poule pendant 10 secondes", type: 'solo' },
+  { text: "Ferme les yeux et laisse-toi te faire embrasser quelque part par {X} (sois hot !!!)", type: 'duo' },
+  { text: "Enlève ton pantalon pendant 3 tours", type: 'solo' },
+  { text: "Fais un massage crânien à {X} pendant 3 questions", type: 'duo' },
+  { text: "Imite une scène X avec {X}", type: 'duo' },
+  { text: "Chante une chanson pendant 30 secondes", type: 'solo' },
+  { text: "Choisis une personne du sexe opposé et fais-lui un bisou sur chaque joue", type: 'solo' },
+  { text: "Lèche la jambe de {X}", type: 'duo' },
+  { text: "Envoie ta puff à {X} pendant 3 questions", type: 'duo' },
+  { text: "Lèche la joue de {X}", type: 'duo' },
 ];
 
 // --- Helper functions ---
@@ -113,31 +113,32 @@ function generateRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
   for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  // Make sure code doesn't already exist
   if (rooms[code]) return generateRoomCode();
   return code;
 }
 
-function createRoom(hostSocketId, hostName) {
+function createRoom(hostSocketId, hostName, hostGender) {
   const code = generateRoomCode();
   rooms[code] = {
     code,
     hostId: hostSocketId,
-    phase: 'lobby', // lobby -> setup -> game -> ended
+    phase: 'lobby',
     players: [{
       id: hostSocketId,
       name: hostName,
+      gender: hostGender,
       setupDone: false
     }],
-    // secrets[targetPlayerName] = [{type: 'photo'|'anecdote', content: '...', submittedBy: 'name'}]
     secrets: {},
     usedQuestions: [],
     usedDares: [],
     currentTurn: null,
     currentChallenge: null,
+    currentPartner: null, // for duo dares
+    challengeTimer: null,
     turnOrder: [],
     turnIndex: 0,
-    revealedSecrets: [] // track what's been revealed
+    revealedSecrets: []
   };
   return rooms[code];
 }
@@ -147,67 +148,201 @@ function getRoom(code) {
 }
 
 function getPlayerNames(room) {
-  return room.players.map(p => p.name);
+  return room.players.map(p => ({ name: p.name, gender: p.gender }));
 }
 
-function getRandomQuestion(room) {
-  const available = questions.filter(q => !room.usedQuestions.includes(q));
-  if (available.length === 0) {
+function getOppositeGender(gender) {
+  return gender === 'M' ? 'F' : 'M';
+}
+
+function getPlayersOfGender(room, gender) {
+  return room.players.filter(p => p.gender === gender);
+}
+
+function getRandomPlayerOfGender(room, gender, excludeNames = []) {
+  const candidates = room.players.filter(p => p.gender === gender && !excludeNames.includes(p.name));
+  if (candidates.length === 0) return null;
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+function getRandomPlayer(room, excludeNames = []) {
+  const candidates = room.players.filter(p => !excludeNames.includes(p.name));
+  if (candidates.length === 0) return null;
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+function pickQuestion(room, currentPlayer) {
+  const validQuestions = questions.filter(q => {
+    if (room.usedQuestions.includes(q.text)) return false;
+    if (q.gender !== 'any' && q.gender !== currentPlayer.gender) return false;
+    // Check if we can fill placeholders
+    if (q.type === 'choice' && q.oppositeX) {
+      const opposite = getPlayersOfGender(room, getOppositeGender(currentPlayer.gender));
+      if (opposite.length < 2) return false;
+    }
+    if (q.type === 'choice' && !q.oppositeX) {
+      const others = room.players.filter(p => p.name !== currentPlayer.name);
+      if (others.length < 2) return false;
+    }
+    if (q.type === 'targeted' && q.oppositeX) {
+      const opposite = getPlayersOfGender(room, getOppositeGender(currentPlayer.gender));
+      if (opposite.length < 1) return false;
+    }
+    if (q.type === 'targeted' && !q.oppositeX) {
+      const others = room.players.filter(p => p.name !== currentPlayer.name);
+      if (others.length < 1) return false;
+    }
+    if (q.type === 'reveal') {
+      const others = room.players.filter(p => p.name !== currentPlayer.name);
+      if (others.length < 1) return false;
+    }
+    return true;
+  });
+
+  if (validQuestions.length === 0) {
     room.usedQuestions = [];
-    return questions[Math.floor(Math.random() * questions.length)];
+    return pickQuestion(room, currentPlayer);
   }
-  const q = available[Math.floor(Math.random() * available.length)];
-  room.usedQuestions.push(q);
-  return q;
+
+  const q = validQuestions[Math.floor(Math.random() * validQuestions.length)];
+  room.usedQuestions.push(q.text);
+
+  // Fill placeholders
+  let finalText = q.text;
+  if (q.type === 'choice') {
+    if (q.oppositeX) {
+      const pool = getPlayersOfGender(room, getOppositeGender(currentPlayer.gender));
+      const shuffled = [...pool].sort(() => Math.random() - 0.5);
+      finalText = finalText.replace('{X1}', shuffled[0].name).replace('{X2}', shuffled[1].name);
+    } else {
+      const pool = room.players.filter(p => p.name !== currentPlayer.name);
+      const shuffled = [...pool].sort(() => Math.random() - 0.5);
+      finalText = finalText.replace('{X1}', shuffled[0].name).replace('{X2}', shuffled[1].name);
+    }
+  } else if (q.type === 'targeted') {
+    if (q.oppositeX) {
+      const target = getRandomPlayerOfGender(room, getOppositeGender(currentPlayer.gender));
+      finalText = finalText.replace('{X}', target.name);
+    } else {
+      const target = getRandomPlayer(room, [currentPlayer.name]);
+      finalText = finalText.replace('{X}', target.name);
+    }
+  } else if (q.type === 'reveal') {
+    const revealer = getRandomPlayer(room, [currentPlayer.name]);
+    finalText = finalText.replace('{Y}', revealer.name);
+  }
+
+  return { challengeType: 'question', text: finalText, dareType: 'solo', partnerName: null };
 }
 
-function getRandomDare(room) {
-  const available = dares.filter(d => !room.usedDares.includes(d));
-  if (available.length === 0) {
+function pickDare(room, currentPlayer) {
+  const validDares = dares.filter(d => {
+    if (room.usedDares.includes(d.text)) return false;
+    if (d.type === 'duo') {
+      const opposite = getPlayersOfGender(room, getOppositeGender(currentPlayer.gender));
+      if (opposite.length < 1) return false;
+    }
+    return true;
+  });
+
+  if (validDares.length === 0) {
     room.usedDares = [];
-    return dares[Math.floor(Math.random() * dares.length)];
+    return pickDare(room, currentPlayer);
   }
-  const d = available[Math.floor(Math.random() * available.length)];
-  room.usedDares.push(d);
-  return d;
+
+  const d = validDares[Math.floor(Math.random() * validDares.length)];
+  room.usedDares.push(d.text);
+
+  let finalText = d.text;
+  let partnerName = null;
+
+  if (d.type === 'duo') {
+    const partner = getRandomPlayerOfGender(room, getOppositeGender(currentPlayer.gender));
+    partnerName = partner.name;
+    finalText = finalText.replace(/\{X\}/g, partner.name);
+  }
+
+  return { challengeType: 'dare', text: finalText, dareType: d.type, partnerName };
 }
 
-function getRandomChallenge(room) {
+function getRandomChallenge(room, currentPlayer) {
   const isQuestion = Math.random() > 0.5;
   if (isQuestion) {
-    return { type: 'question', text: getRandomQuestion(room) };
+    return pickQuestion(room, currentPlayer);
   } else {
-    return { type: 'dare', text: getRandomDare(room) };
+    return pickDare(room, currentPlayer);
   }
 }
 
 function getSecretForPlayer(room, playerName) {
   const secrets = room.secrets[playerName];
   if (!secrets || secrets.length === 0) return null;
-  // Pick one that hasn't been revealed yet
   const unrevealed = secrets.filter(s =>
     !room.revealedSecrets.find(r => r.content === s.content && r.target === playerName)
   );
   if (unrevealed.length === 0) return null;
-  const secret = unrevealed[Math.floor(Math.random() * unrevealed.length)];
-  return secret;
+  return unrevealed[Math.floor(Math.random() * unrevealed.length)];
+}
+
+function clearTimer(room) {
+  if (room.challengeTimer) {
+    clearTimeout(room.challengeTimer);
+    room.challengeTimer = null;
+  }
+}
+
+function nextTurn(room) {
+  room.turnIndex = (room.turnIndex + 1) % room.turnOrder.length;
+  room.currentTurn = null;
+  room.currentChallenge = null;
+  room.currentPartner = null;
+  clearTimer(room);
+
+  io.to(room.code).emit('start-spin', {
+    players: getPlayerNames(room)
+  });
+}
+
+function revealSecretOf(room, playerName) {
+  const secret = getSecretForPlayer(room, playerName);
+  if (secret) {
+    room.revealedSecrets.push({ ...secret, target: playerName });
+    io.to(room.code).emit('secret-revealed', {
+      playerName,
+      secret
+    });
+    setTimeout(() => nextTurn(room), 8000);
+  } else {
+    io.to(room.code).emit('challenge-timeout', { playerName });
+    setTimeout(() => nextTurn(room), 4000);
+  }
+}
+
+function startGame(room) {
+  room.phase = 'game';
+  room.turnOrder = [...room.players].sort(() => Math.random() - 0.5);
+  room.turnIndex = 0;
+  io.to(room.code).emit('phase-change', { phase: 'game' });
+  setTimeout(() => {
+    io.to(room.code).emit('start-spin', {
+      players: getPlayerNames(room)
+    });
+  }, 1500);
 }
 
 // --- Socket.io ---
 io.on('connection', (socket) => {
-  console.log(`Player connected: ${socket.id}`);
+  console.log(`Connected: ${socket.id}`);
 
-  // Create a room
-  socket.on('create-room', (playerName, callback) => {
-    const room = createRoom(socket.id, playerName);
+  socket.on('create-room', (data, callback) => {
+    const { playerName, gender } = data;
+    const room = createRoom(socket.id, playerName, gender);
     socket.join(room.code);
     callback({ success: true, roomCode: room.code, players: getPlayerNames(room) });
-    console.log(`Room ${room.code} created by ${playerName}`);
   });
 
-  // Join a room
   socket.on('join-room', (data, callback) => {
-    const { roomCode, playerName } = data;
+    const { roomCode, playerName, gender } = data;
     const room = getRoom(roomCode.toUpperCase());
 
     if (!room) return callback({ success: false, error: "Cette room n'existe pas." });
@@ -217,14 +352,12 @@ io.on('connection', (socket) => {
     }
     if (room.players.length >= 12) return callback({ success: false, error: "La room est pleine (max 12)." });
 
-    room.players.push({ id: socket.id, name: playerName, setupDone: false });
+    room.players.push({ id: socket.id, name: playerName, gender, setupDone: false });
     socket.join(room.code);
     callback({ success: true, roomCode: room.code, players: getPlayerNames(room) });
     io.to(room.code).emit('player-joined', { players: getPlayerNames(room) });
-    console.log(`${playerName} joined room ${room.code}`);
   });
 
-  // Host starts setup phase
   socket.on('start-setup', (roomCode) => {
     const room = getRoom(roomCode);
     if (!room || socket.id !== room.hostId) return;
@@ -235,10 +368,8 @@ io.on('connection', (socket) => {
       phase: 'setup',
       players: getPlayerNames(room)
     });
-    console.log(`Room ${room.code} entering setup phase`);
   });
 
-  // Player submits secrets about another player
   socket.on('submit-secret', (data, callback) => {
     const { roomCode, targetPlayer, secrets: playerSecrets } = data;
     const room = getRoom(roomCode);
@@ -247,24 +378,19 @@ io.on('connection', (socket) => {
     const player = room.players.find(p => p.id === socket.id);
     if (!player) return callback({ success: false });
 
-    // Initialize secrets array for target if needed
     if (!room.secrets[targetPlayer]) room.secrets[targetPlayer] = [];
 
-    // Add each secret
     playerSecrets.forEach(secret => {
       room.secrets[targetPlayer].push({
-        type: secret.type, // 'photo' or 'anecdote'
+        type: secret.type,
         content: secret.content,
         submittedBy: player.name
       });
     });
 
-    // Mark player as done with setup
     player.setupDone = true;
-
     callback({ success: true });
 
-    // Check if all players are done
     const allDone = room.players.every(p => p.setupDone);
     io.to(room.code).emit('setup-progress', {
       done: room.players.filter(p => p.setupDone).length,
@@ -276,43 +402,26 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Host force-starts the game (skip players who haven't submitted)
   socket.on('force-start-game', (roomCode) => {
     const room = getRoom(roomCode);
     if (!room || socket.id !== room.hostId) return;
     if (room.phase !== 'setup') return;
-    // Need at least 1 player done
-    const donePlayers = room.players.filter(p => p.setupDone);
-    if (donePlayers.length < 1) return;
+    if (room.players.filter(p => p.setupDone).length < 1) return;
     startGame(room);
   });
 
-  function startGame(room) {
-    room.phase = 'game';
-    room.turnOrder = [...room.players].sort(() => Math.random() - 0.5);
-    room.turnIndex = 0;
-    io.to(room.code).emit('phase-change', { phase: 'game' });
-    setTimeout(() => {
-      io.to(room.code).emit('start-spin', {
-        players: getPlayerNames(room)
-      });
-    }, 1500);
-  }
-
-  // Roulette has finished spinning, server decides result
+  // Roulette result
   socket.on('request-spin-result', (roomCode) => {
     const room = getRoom(roomCode);
     if (!room || room.phase !== 'game') return;
 
-    // Pick current player from turn order
     const currentPlayer = room.turnOrder[room.turnIndex];
     room.currentTurn = currentPlayer;
 
-    // Generate challenge
-    const challenge = getRandomChallenge(room);
+    const challenge = getRandomChallenge(room, currentPlayer);
     room.currentChallenge = challenge;
+    room.currentPartner = challenge.partnerName;
 
-    // Check if there's a secret available for this player
     const hasSecret = getSecretForPlayer(room, currentPlayer.name) !== null;
 
     io.to(room.code).emit('spin-result', {
@@ -322,89 +431,89 @@ io.on('connection', (socket) => {
       timerSeconds: 10
     });
 
-    // Auto-refuse after 10 seconds if no response
+    // Auto-refuse after 10s
     room.challengeTimer = setTimeout(() => {
       if (room.currentChallenge && room.currentTurn) {
-        handleRefuse(room);
+        revealSecretOf(room, currentPlayer.name);
       }
     }, 10000);
   });
 
-  // Player accepts the challenge
+  // Player 1 accepts
   socket.on('accept-challenge', (roomCode) => {
     const room = getRoom(roomCode);
     if (!room || !room.currentTurn) return;
+    clearTimer(room);
 
-    // Clear the timer
-    if (room.challengeTimer) {
-      clearTimeout(room.challengeTimer);
-      room.challengeTimer = null;
+    const challenge = room.currentChallenge;
+
+    // If it's a duo dare, now ask partner
+    if (challenge.challengeType === 'dare' && challenge.dareType === 'duo' && challenge.partnerName) {
+      const partner = room.players.find(p => p.name === challenge.partnerName);
+      const hasPartnerSecret = getSecretForPlayer(room, partner.name) !== null;
+
+      io.to(room.code).emit('waiting-for-partner', {
+        playerName: room.currentTurn.name,
+        partnerName: challenge.partnerName,
+        challenge,
+        canRefuse: hasPartnerSecret,
+        timerSeconds: 10
+      });
+
+      // Auto-refuse partner after 10s
+      room.challengeTimer = setTimeout(() => {
+        if (room.currentChallenge && room.currentPartner) {
+          revealSecretOf(room, challenge.partnerName);
+        }
+      }, 10000);
+
+    } else {
+      // Solo challenge accepted
+      io.to(room.code).emit('challenge-accepted', {
+        playerName: room.currentTurn.name,
+        challenge
+      });
+      setTimeout(() => nextTurn(room), 3000);
     }
+  });
+
+  // Partner accepts the duo dare
+  socket.on('partner-accept', (roomCode) => {
+    const room = getRoom(roomCode);
+    if (!room || !room.currentTurn) return;
+    clearTimer(room);
 
     io.to(room.code).emit('challenge-accepted', {
       playerName: room.currentTurn.name,
+      partnerName: room.currentPartner,
       challenge: room.currentChallenge
     });
-
-    // Move to next turn after a delay
-    setTimeout(() => nextTurn(room), 3000);
+    setTimeout(() => nextTurn(room), 5000);
   });
 
-  // Player refuses -> reveal a secret
+  // Partner refuses the duo dare -> partner's secret revealed
+  socket.on('partner-refuse', (roomCode) => {
+    const room = getRoom(roomCode);
+    if (!room || !room.currentPartner) return;
+    clearTimer(room);
+    revealSecretOf(room, room.currentPartner);
+  });
+
+  // Player 1 refuses
   socket.on('refuse-challenge', (roomCode) => {
     const room = getRoom(roomCode);
     if (!room || !room.currentTurn) return;
-
-    // Clear the timer
-    if (room.challengeTimer) {
-      clearTimeout(room.challengeTimer);
-      room.challengeTimer = null;
-    }
-
-    handleRefuse(room);
+    clearTimer(room);
+    revealSecretOf(room, room.currentTurn.name);
   });
 
-  function handleRefuse(room) {
-    const secret = getSecretForPlayer(room, room.currentTurn.name);
-    if (secret) {
-      room.revealedSecrets.push({ ...secret, target: room.currentTurn.name });
-      io.to(room.code).emit('secret-revealed', {
-        playerName: room.currentTurn.name,
-        secret
-      });
-    } else {
-      // No secret available, just show timeout
-      io.to(room.code).emit('challenge-timeout', {
-        playerName: room.currentTurn.name
-      });
-    }
-
-    // Move to next turn after viewing time
-    setTimeout(() => nextTurn(room), 8000);
-  }
-
-  // Next turn
-  function nextTurn(room) {
-    room.turnIndex = (room.turnIndex + 1) % room.turnOrder.length;
-    room.currentTurn = null;
-    room.currentChallenge = null;
-
-    io.to(room.code).emit('start-spin', {
-      players: getPlayerNames(room)
-    });
-  }
-
-  // Continue game (host triggers next spin manually)
   socket.on('next-turn', (roomCode) => {
     const room = getRoom(roomCode);
     if (!room) return;
     nextTurn(room);
   });
 
-  // Disconnect handling
   socket.on('disconnect', () => {
-    console.log(`Player disconnected: ${socket.id}`);
-    // Find which room this player was in
     for (const code in rooms) {
       const room = rooms[code];
       const playerIndex = room.players.findIndex(p => p.id === socket.id);
@@ -413,13 +522,11 @@ io.on('connection', (socket) => {
         if (room.phase === 'lobby') {
           room.players.splice(playerIndex, 1);
           io.to(room.code).emit('player-joined', { players: getPlayerNames(room) });
-          // If host left, delete room
           if (socket.id === room.hostId) {
             io.to(room.code).emit('room-closed');
             delete rooms[code];
           }
         } else {
-          // During game, mark as disconnected but keep
           io.to(room.code).emit('player-disconnected', { playerName: player.name });
         }
         break;
@@ -428,7 +535,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// --- Start server ---
 server.listen(PORT, () => {
   console.log(`Shame Game running on port ${PORT}`);
 });
