@@ -213,7 +213,7 @@
             <circle class="bg" cx="40" cy="40" r="36"/>
             <circle class="progress" id="timerProgress" cx="40" cy="40" r="36"/>
           </svg>
-          <div class="timer-number" id="timerNumber">10</div>
+          <div class="timer-number" id="timerNumber">25</div>
         </div>
         <div class="challenge-type" id="challengeType"></div>
         <div class="challenge-text" id="challengeText"></div>
@@ -505,7 +505,7 @@
       } else {
         btns.innerHTML = `<div class="section-subtitle">C'est au tour de ${data.playerName}...</div>`;
       }
-      startTimer(10);
+      startTimer(25);
     }
 
     // --- PARTNER FLOW (duo dares) ---
@@ -533,7 +533,7 @@
         $('partnerTag').textContent = `En attente de ${data.partnerName}...`;
         btns.innerHTML = `<div class="section-subtitle">${data.playerName} a accepté, en attente de ${data.partnerName}...</div>`;
       }
-      startTimer(10);
+      startTimer(25);
     });
 
     function partnerAccept() { stopTimer(); socket.emit('partner-accept', roomCode); }

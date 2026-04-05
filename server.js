@@ -410,10 +410,13 @@ io.on('connection', (socket) => {
     startGame(room);
   });
 
-  // Roulette result
+  // Roulette result - only process ONCE per turn (ignore duplicates from other players)
   socket.on('request-spin-result', (roomCode) => {
     const room = getRoom(roomCode);
     if (!room || room.phase !== 'game') return;
+
+    // CRITICAL: Only process if we haven't already set up this turn
+    if (room.currentChallenge) return;
 
     const currentPlayer = room.turnOrder[room.turnIndex];
     room.currentTurn = currentPlayer;
@@ -428,18 +431,18 @@ io.on('connection', (socket) => {
       playerName: currentPlayer.name,
       challenge,
       canRefuse: hasSecret,
-      timerSeconds: 10
+      timerSeconds: 25
     });
 
     // Track which phase we're in: 'player1' or 'partner'
     room.challengePhase = 'player1';
 
-    // Auto-refuse after 10s
+    // Auto-refuse after 25s
     room.challengeTimer = setTimeout(() => {
       if (room.currentChallenge && room.currentTurn && room.challengePhase === 'player1') {
         revealSecretOf(room, currentPlayer.name);
       }
-    }, 10000);
+    }, 25000);
   });
 
   // Player 1 accepts
@@ -461,15 +464,15 @@ io.on('connection', (socket) => {
         partnerName: challenge.partnerName,
         challenge,
         canRefuse: hasPartnerSecret,
-        timerSeconds: 10
+        timerSeconds: 25
       });
 
-      // NEW timer for partner - 10 fresh seconds
+      // NEW timer for partner - 25 fresh seconds
       room.challengeTimer = setTimeout(() => {
         if (room.currentChallenge && room.currentPartner && room.challengePhase === 'partner') {
           revealSecretOf(room, challenge.partnerName);
         }
-      }, 10000);
+      }, 25000);
 
     } else {
       // Solo challenge accepted
