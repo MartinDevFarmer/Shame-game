@@ -171,11 +171,8 @@
   <!-- SETUP -->
   <div id="setup" class="screen">
     <div class="section-title">Phase secrète</div>
-    <div class="section-subtitle">Choisis un joueur et balance ses pires secrets</div>
+    <div class="section-subtitle">Balance les pires secrets de tes potes</div>
     <div class="setup-container">
-      <select class="target-select" id="targetSelect">
-        <option value="">Choisis ta victime...</option>
-      </select>
       <div id="secretsList"></div>
       <button class="add-secret-btn" id="addAnecdoteBtn">+ Ajouter une anecdote</button>
       <button class="add-secret-btn" id="addPhotoBtn">+ Ajouter une photo</button>
@@ -349,23 +346,28 @@
     });
 
     function renderSetup() {
-      const select = $('targetSelect');
-      select.innerHTML = '<option value="">Choisis ta victime...</option>';
-      players.forEach(p => {
-        if (p.name !== myName) {
-          const opt = document.createElement('option');
-          opt.value = p.name;
-          opt.textContent = `${p.gender === 'M' ? '♂' : '♀'} ${p.name}`;
-          select.appendChild(opt);
-        }
-      });
       secrets = [];
       renderSecrets();
     }
 
+    function getOtherPlayers() {
+      return players.filter(p => p.name !== myName);
+    }
+
+    function buildTargetOptions(selectedName) {
+      const others = getOtherPlayers();
+      let html = '<option value="">Victime...</option>';
+      others.forEach(p => {
+        const icon = p.gender === 'M' ? '♂' : '♀';
+        const sel = p.name === selectedName ? 'selected' : '';
+        html += `<option value="${p.name}" ${sel}>${icon} ${p.name}</option>`;
+      });
+      return html;
+    }
+
     let secretIdCounter = 0;
-    $('addAnecdoteBtn').onclick = () => { secrets.push({ id: ++secretIdCounter, type: 'anecdote', content: '' }); renderSecrets(); };
-    $('addPhotoBtn').onclick = () => { secrets.push({ id: ++secretIdCounter, type: 'photo', content: '' }); renderSecrets(); };
+    $('addAnecdoteBtn').onclick = () => { secrets.push({ id: ++secretIdCounter, type: 'anecdote', content: '', target: '' }); renderSecrets(); };
+    $('addPhotoBtn').onclick = () => { secrets.push({ id: ++secretIdCounter, type: 'photo', content: '', target: '' }); renderSecrets(); };
 
     function renderSecrets() {
       const list = $('secretsList');
@@ -373,17 +375,21 @@
       secrets.forEach((s) => {
         const div = document.createElement('div');
         div.className = 'secret-entry';
+        const targetSelect = `<select class="target-select" style="font-size:0.85rem;padding:8px 12px;max-width:160px;" onchange="updateSecretTarget(${s.id}, this.value)">${buildTargetOptions(s.target)}</select>`;
+
         if (s.type === 'anecdote') {
           div.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
               <div class="type-label">Anecdote</div>
+              ${targetSelect}
               <button onclick="removeSecret(${s.id})" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.2rem;">✕</button>
             </div>
             <textarea placeholder="Raconte le pire truc que tu sais sur cette personne..." oninput="updateSecret(${s.id}, this.value)">${s.content}</textarea>`;
         } else {
           div.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
               <div class="type-label">Photo</div>
+              ${targetSelect}
               <button onclick="removeSecret(${s.id})" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.2rem;">✕</button>
             </div>
             <div class="photo-upload-area">
@@ -398,6 +404,7 @@
 
     function removeSecret(id) { secrets = secrets.filter(s => s.id !== id); renderSecrets(); }
     function updateSecret(id, value) { const s = secrets.find(s => s.id === id); if (s) s.content = value; validateSetup(); }
+    function updateSecretTarget(id, value) { const s = secrets.find(s => s.id === id); if (s) s.target = value; validateSetup(); }
 
     async function uploadPhoto(id, input) {
       const file = input.files[0];
@@ -412,20 +419,34 @@
     }
 
     function validateSetup() {
-      const target = $('targetSelect').value;
-      const hasSecrets = secrets.length > 0 && secrets.every(s => s.content.trim());
-      $('submitSecretsBtn').disabled = !(target && hasSecrets);
+      const allValid = secrets.length > 0 && secrets.every(s => s.content.trim() && s.target);
+      $('submitSecretsBtn').disabled = !allValid;
     }
-    $('targetSelect').onchange = validateSetup;
 
     $('submitSecretsBtn').onclick = () => {
-      const target = $('targetSelect').value;
-      socket.emit('submit-secret', {
-        roomCode,
-        targetPlayer: target,
-        secrets: secrets.map(s => ({ type: s.type, content: s.content }))
-      }, (res) => {
-        if (res.success) $('setupWaiting').classList.add('active');
+      // Group secrets by target player
+      const byTarget = {};
+      secrets.forEach(s => {
+        if (!byTarget[s.target]) byTarget[s.target] = [];
+        byTarget[s.target].push({ type: s.type, content: s.content });
+      });
+
+      const targets = Object.keys(byTarget);
+      let done = 0;
+
+      targets.forEach(target => {
+        socket.emit('submit-secret', {
+          roomCode,
+          targetPlayer: target,
+          secrets: byTarget[target]
+        }, (res) => {
+          done++;
+          if (done === targets.length) {
+            // All secrets sent, now signal we're done
+            socket.emit('setup-done', roomCode);
+            $('setupWaiting').classList.add('active');
+          }
+        });
       });
     };
 

@@ -370,6 +370,7 @@ io.on('connection', (socket) => {
     });
   });
 
+  // Submit secrets for one target (can be called multiple times per player)
   socket.on('submit-secret', (data, callback) => {
     const { roomCode, targetPlayer, secrets: playerSecrets } = data;
     const room = getRoom(roomCode);
@@ -388,8 +389,18 @@ io.on('connection', (socket) => {
       });
     });
 
-    player.setupDone = true;
     callback({ success: true });
+  });
+
+  // Player signals they're done submitting all secrets
+  socket.on('setup-done', (roomCode) => {
+    const room = getRoom(roomCode);
+    if (!room) return;
+
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return;
+
+    player.setupDone = true;
 
     const allDone = room.players.every(p => p.setupDone);
     io.to(room.code).emit('setup-progress', {
