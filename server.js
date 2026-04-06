@@ -9,7 +9,9 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  maxHttpBufferSize: 10e6
+  maxHttpBufferSize: 10e6,
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
 
 const PORT = process.env.PORT || 3000;
@@ -413,15 +415,30 @@ io.on('connection', (socket) => {
     const room = getRoom(roomCode.toUpperCase());
 
     if (!room) return callback({ success: false, error: "Cette room n'existe pas." });
-    if (room.phase !== 'lobby') return callback({ success: false, error: "La partie a déjà commencé." });
-    if (room.players.find(p => p.name.toLowerCase() === playerName.toLowerCase())) {
-      return callback({ success: false, error: "Ce prénom est déjà pris." });
-    }
     if (room.players.length >= 12) return callback({ success: false, error: "La room est pleine (max 12)." });
 
+    // Check if this player already exists (reconnection)
+    const existing = room.players.find(p => p.name.toLowerCase() === playerName.toLowerCase());
+    if (existing) {
+      // Reconnect: update their socket id
+      existing.id = socket.id;
+      existing.disconnected = false;
+      socket.join(room.code);
+      callback({ success: true, roomCode: room.code, players: getPlayerNames(room), phase: room.phase, reconnected: true });
+      io.to(room.code).emit('player-joined', { players: getPlayerNames(room) });
+      return;
+    }
+
+    // New player joining
     room.players.push({ id: socket.id, name: playerName, gender, setupDone: false });
     socket.join(room.code);
-    callback({ success: true, roomCode: room.code, players: getPlayerNames(room) });
+
+    // If game is already in progress, add to turn order too
+    if (room.phase === 'game') {
+      room.turnOrder.push(room.players[room.players.length - 1]);
+    }
+
+    callback({ success: true, roomCode: room.code, players: getPlayerNames(room), phase: room.phase });
     io.to(room.code).emit('player-joined', { players: getPlayerNames(room) });
   });
 
@@ -640,13 +657,17 @@ io.on('connection', (socket) => {
       if (playerIndex !== -1) {
         const player = room.players[playerIndex];
         if (room.phase === 'lobby') {
-          room.players.splice(playerIndex, 1);
-          io.to(room.code).emit('player-joined', { players: getPlayerNames(room) });
+          // In lobby: remove player unless they're the host
           if (socket.id === room.hostId) {
             io.to(room.code).emit('room-closed');
             delete rooms[code];
+          } else {
+            room.players.splice(playerIndex, 1);
+            io.to(room.code).emit('player-joined', { players: getPlayerNames(room) });
           }
         } else {
+          // During setup/game: keep player in list, mark as disconnected (can reconnect)
+          player.disconnected = true;
           io.to(room.code).emit('player-disconnected', { playerName: player.name });
         }
         break;

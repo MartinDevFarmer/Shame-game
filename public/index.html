@@ -675,7 +675,7 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io();
+    const socket = io({ reconnection: true, reconnectionAttempts: 50, reconnectionDelay: 1000, reconnectionDelayMax: 5000 });
     let myName = '';
     let myGender = '';
     let roomCode = '';
@@ -697,6 +697,25 @@
       document.body.appendChild(t);
       setTimeout(() => t.remove(), 3000);
     }
+
+    // =================== AUTO-RECONNECT ===================
+    socket.on('connect', () => {
+      // If we were in a game, auto-rejoin
+      if (roomCode && myName && myGender) {
+        socket.emit('join-room', { roomCode, playerName: myName, gender: myGender }, (res) => {
+          if (res.success) {
+            players = res.players;
+            if (res.phase === 'game') {
+              showScreen('game');
+            } else if (res.phase === 'setup') {
+              renderSetup();
+              showScreen('setup');
+            }
+            showToast('Reconnecté !');
+          }
+        });
+      }
+    });
 
     // =================== GENDER ===================
     function selectGender(g) {
@@ -733,8 +752,16 @@
         if (res.success) {
           roomCode = res.roomCode;
           players = res.players;
-          renderLobby();
-          showScreen('lobby');
+          // Go to the right screen depending on the game phase
+          if (res.phase === 'game') {
+            showScreen('game');
+          } else if (res.phase === 'setup') {
+            renderSetup();
+            showScreen('setup');
+          } else {
+            renderLobby();
+            showScreen('lobby');
+          }
         } else {
           $('homeError').textContent = res.error;
         }
