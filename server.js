@@ -155,11 +155,12 @@ function generateRoomCode() {
   return code;
 }
 
-function createRoom(hostSocketId, hostName, hostGender) {
+function createRoom(hostSocketId, hostName, hostGender, gameType = 'original') {
   const code = generateRoomCode();
   rooms[code] = {
     code,
     hostId: hostSocketId,
+    gameType: gameType,
     phase: 'lobby',
     players: [{
       id: hostSocketId,
@@ -177,7 +178,14 @@ function createRoom(hostSocketId, hostName, hostGender) {
     challengeTimer: null,
     turnOrder: [],
     turnIndex: 0,
-    revealedSecrets: []
+    revealedSecrets: [],
+    // Pyramid-specific fields
+    playerCards: {},
+    pyramid: [],
+    pyramidRow: 0,
+    pyramidCol: 0,
+    pyramidPhase: 'waiting-attack',
+    currentAttack: null
   };
   return rooms[code];
 }
@@ -387,6 +395,83 @@ function revealSecretOf(room, playerName) {
   }
 }
 
+// ============================================================
+// PYRAMID GAME UTILITIES
+// ============================================================
+const CARD_VALUES = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+const CARD_SUITS = ['♠', '♥', '♦', '♣'];
+
+function createDeck() {
+  const deck = [];
+  for (const suit of CARD_SUITS) {
+    for (const value of CARD_VALUES) {
+      deck.push({ value, suit });
+    }
+  }
+  return deck;
+}
+
+function shuffleDeck(deck) {
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
+}
+
+function startPyramidGame(room) {
+  room.phase = 'game';
+
+  // Create and shuffle deck
+  const deck = shuffleDeck(createDeck());
+
+  // Deal 3 cards to each player
+  room.playerCards = {};
+  let deckIndex = 0;
+  for (const player of room.players) {
+    room.playerCards[player.name] = [
+      deck[deckIndex++],
+      deck[deckIndex++],
+      deck[deckIndex++]
+    ];
+  }
+
+  // Build pyramid: 5 rows (row 0 = 5 cards at bottom, row 4 = 1 card at top)
+  room.pyramid = [];
+  let pyramidIndex = 0;
+  for (let row = 0; row < 5; row++) {
+    const cardCount = 5 - row;
+    const rowCards = [];
+    for (let col = 0; col < cardCount; col++) {
+      rowCards.push({ ...deck[deckIndex++], flipped: false });
+    }
+    room.pyramid.push(rowCards);
+  }
+
+  room.pyramidRow = 4; // Start at top (1 card)
+  room.pyramidCol = 0;
+  room.pyramidPhase = 'waiting-attack';
+
+  // Send each player their cards (hidden)
+  for (const player of room.players) {
+    const playerSocket = Array.from(io.sockets.sockets.values()).find(s => s.id === player.id);
+    if (playerSocket) {
+      playerSocket.emit('pyramid-your-cards', { cards: room.playerCards[player.name] });
+    }
+  }
+
+  // Broadcast pyramid structure and start memorization phase
+  io.to(room.code).emit('phase-change', { phase: 'pyramid-memorize' });
+  io.to(room.code).emit('pyramid-init', { pyramid: room.pyramid });
+
+  // After 15 seconds, hide cards and start playing
+  setTimeout(() => {
+    io.to(room.code).emit('pyramid-cards-hidden');
+    room.phase = 'game';
+    room.pyramidPhase = 'waiting-flip';
+  }, 15000);
+}
+
 function startGame(room) {
   room.phase = 'game';
   room.turnOrder = [...room.players].sort(() => Math.random() - 0.5);
@@ -404,10 +489,10 @@ io.on('connection', (socket) => {
   console.log(`Connected: ${socket.id}`);
 
   socket.on('create-room', (data, callback) => {
-    const { playerName, gender } = data;
-    const room = createRoom(socket.id, playerName, gender);
+    const { playerName, gender, gameType = 'original' } = data;
+    const room = createRoom(socket.id, playerName, gender, gameType);
     socket.join(room.code);
-    callback({ success: true, roomCode: room.code, players: getPlayerNames(room) });
+    callback({ success: true, roomCode: room.code, players: getPlayerNames(room), gameType: room.gameType });
   });
 
   socket.on('join-room', (data, callback) => {
@@ -424,7 +509,7 @@ io.on('connection', (socket) => {
       existing.id = socket.id;
       existing.disconnected = false;
       socket.join(room.code);
-      callback({ success: true, roomCode: room.code, players: getPlayerNames(room), phase: room.phase, reconnected: true });
+      callback({ success: true, roomCode: room.code, players: getPlayerNames(room), phase: room.phase, gameType: room.gameType, reconnected: true });
       io.to(room.code).emit('player-joined', { players: getPlayerNames(room) });
       return;
     }
@@ -438,7 +523,7 @@ io.on('connection', (socket) => {
       room.turnOrder.push(room.players[room.players.length - 1]);
     }
 
-    callback({ success: true, roomCode: room.code, players: getPlayerNames(room), phase: room.phase });
+    callback({ success: true, roomCode: room.code, players: getPlayerNames(room), phase: room.phase, gameType: room.gameType });
     io.to(room.code).emit('player-joined', { players: getPlayerNames(room) });
   });
 
@@ -493,7 +578,11 @@ io.on('connection', (socket) => {
     });
 
     if (allDone) {
-      startGame(room);
+      if (room.gameType === 'pyramide') {
+        startPyramidGame(room);
+      } else {
+        startGame(room);
+      }
     }
   });
 
@@ -502,7 +591,11 @@ io.on('connection', (socket) => {
     if (!room || socket.id !== room.hostId) return;
     if (room.phase !== 'setup') return;
     if (room.players.filter(p => p.setupDone).length < 1) return;
-    startGame(room);
+    if (room.gameType === 'pyramide') {
+      startPyramidGame(room);
+    } else {
+      startGame(room);
+    }
   });
 
   // Roulette result - only process ONCE per turn (ignore duplicates from other players)
@@ -648,6 +741,133 @@ io.on('connection', (socket) => {
     const room = getRoom(roomCode);
     if (!room) return;
     nextTurn(room);
+  });
+
+  // =================== PYRAMID EVENTS ===================
+  socket.on('pyramid-flip-card', (roomCode) => {
+    const room = getRoom(roomCode);
+    if (!room || socket.id !== room.hostId) return;
+    if (room.phase !== 'game' || room.gameType !== 'pyramide') return;
+
+    const row = room.pyramidRow;
+    const col = room.pyramidCol;
+    if (!room.pyramid[row] || !room.pyramid[row][col]) return;
+
+    const card = room.pyramid[row][col];
+    card.flipped = true;
+
+    const level = row + 1;
+    io.to(room.code).emit('pyramid-card-flipped', {
+      row,
+      col,
+      card: { value: card.value, suit: card.suit },
+      level
+    });
+
+    room.pyramidPhase = 'waiting-attack';
+  });
+
+  socket.on('pyramid-attack', (data) => {
+    const { roomCode, cardIndex, victimName } = data;
+    const room = getRoom(roomCode);
+    if (!room || room.gameType !== 'pyramide') return;
+
+    const attacker = room.players.find(p => p.id === socket.id);
+    if (!attacker) return;
+
+    const level = room.pyramidRow + 1;
+    room.currentAttack = {
+      attackerName: attacker.name,
+      cardIndex,
+      victimName,
+      level
+    };
+
+    room.pyramidPhase = 'responding';
+    io.to(room.code).emit('pyramid-attacked', {
+      attackerName: attacker.name,
+      victimName,
+      level
+    });
+  });
+
+  socket.on('pyramid-respond', (data) => {
+    const { roomCode, response } = data;
+    const room = getRoom(roomCode);
+    if (!room || room.gameType !== 'pyramide') return;
+    if (!room.currentAttack) return;
+
+    const victim = room.players.find(p => p.id === socket.id);
+    if (!victim || victim.name !== room.currentAttack.victimName) return;
+
+    const attack = room.currentAttack;
+    const level = attack.level;
+
+    if (response === 'accept') {
+      io.to(room.code).emit('pyramid-accept', {
+        victimName: attack.victimName,
+        sips: level
+      });
+      room.pyramidPhase = 'waiting-attack';
+    } else if (response === 'bluff') {
+      // Check if attacker's card matches the flipped card's VALUE
+      const attackerCards = room.playerCards[attack.attackerName];
+      if (!attackerCards || !attackerCards[attack.cardIndex]) {
+        room.pyramidPhase = 'waiting-attack';
+        return;
+      }
+
+      const attackerCard = attackerCards[attack.cardIndex];
+      const currentCard = room.pyramid[room.pyramidRow][room.pyramidCol];
+
+      if (attackerCard.value === currentCard.value) {
+        // Attacker had it - victim drinks double
+        io.to(room.code).emit('pyramid-bluff-fail', {
+          victimName: attack.victimName,
+          attackerName: attack.attackerName,
+          sips: level * 2,
+          card: attackerCard
+        });
+      } else {
+        // Attacker was bluffing - attacker drinks double and secret revealed
+        const attackerPlayer = room.players.find(p => p.name === attack.attackerName);
+        const secret = getSecretForPlayer(room, attack.attackerName);
+        if (secret) {
+          room.revealedSecrets.push({ ...secret, target: attack.attackerName });
+        }
+        io.to(room.code).emit('pyramid-bluff-success', {
+          victimName: attack.victimName,
+          attackerName: attack.attackerName,
+          sips: level * 2,
+          card: attackerCard,
+          secret: secret || null
+        });
+      }
+      room.pyramidPhase = 'waiting-attack';
+    }
+  });
+
+  socket.on('pyramid-next-card', (roomCode) => {
+    const room = getRoom(roomCode);
+    if (!room || socket.id !== room.hostId) return;
+    if (room.phase !== 'game' || room.gameType !== 'pyramide') return;
+
+    room.pyramidCol++;
+
+    // Check if we need to move to next row
+    if (room.pyramidCol >= room.pyramid[room.pyramidRow].length) {
+      room.pyramidRow++;
+      room.pyramidCol = 0;
+
+      // Check if pyramid is done
+      if (room.pyramidRow >= room.pyramid.length) {
+        io.to(room.code).emit('pyramid-game-over');
+        return;
+      }
+    }
+
+    // Emit ready for next flip
+    io.to(room.code).emit('pyramid-ready-next');
   });
 
   socket.on('disconnect', () => {

@@ -487,12 +487,169 @@
     .timer-number.urgent { color: var(--danger); }
 
     .partner-tag { display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; background: rgba(255, 107, 53, 0.2); color: var(--accent2); margin-bottom: 12px; }
+
+    /* Game Selection */
+    .game-card {
+      background: var(--card);
+      border: 2px solid #2a2a4a;
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .game-card:hover, .game-card:active {
+      border-color: var(--accent);
+      transform: scale(1.02);
+      box-shadow: 0 0 30px rgba(255, 45, 85, 0.2);
+    }
+    .game-card-icon { font-size: 3rem; margin-bottom: 12px; }
+    .game-card-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; }
+    .game-card-desc { color: var(--text-muted); font-size: 0.85rem; }
+
+    /* Pyramid */
+    .pyramid-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin: 12px auto;
+      max-width: 360px;
+    }
+    .pyramid-row {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+    }
+    .pyramid-card {
+      width: 48px;
+      height: 68px;
+      border-radius: 8px;
+      border: 2px solid #2a2a4a;
+      background: linear-gradient(135deg, #1a1a4a, #2a2a6a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: default;
+      transition: all 0.4s;
+      position: relative;
+    }
+    .pyramid-card.flipped {
+      background: white;
+      color: #1a1a35;
+      border-color: var(--gold);
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+    }
+    .pyramid-card.flipped.red { color: #cc0000; }
+    .pyramid-card.current {
+      border-color: var(--accent);
+      box-shadow: 0 0 20px rgba(255, 45, 85, 0.5);
+      animation: pulse 1s infinite;
+    }
+
+    /* Player hand cards */
+    .my-cards {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin: 12px 0;
+    }
+    .hand-card {
+      width: 60px;
+      height: 84px;
+      border-radius: 10px;
+      border: 2px solid #2a2a4a;
+      background: white;
+      color: #1a1a35;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .hand-card.red { color: #cc0000; }
+    .hand-card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 15px rgba(255, 45, 85, 0.5);
+      transform: translateY(-8px);
+    }
+    .hand-card.face-down {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: transparent;
+      cursor: default;
+    }
+    .hand-card .card-value { font-size: 1.3rem; }
+    .hand-card .card-suit { font-size: 1rem; }
+
+    .pyramid-current-card {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 70px;
+      height: 98px;
+      border-radius: 12px;
+      border: 3px solid var(--gold);
+      background: white;
+      color: #1a1a35;
+      font-weight: 900;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    }
+    .pyramid-current-card.red { color: #cc0000; }
+    .pyramid-current-card .card-value { font-size: 1.8rem; }
+    .pyramid-current-card .card-suit { font-size: 1.3rem; }
+
+    .attack-victims {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin: 10px 0;
+    }
+    .victim-btn {
+      padding: 10px 16px;
+      border: 2px solid #2a2a4a;
+      border-radius: 14px;
+      background: var(--card);
+      color: var(--text);
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .victim-btn.selected {
+      border-color: var(--accent);
+      background: rgba(255, 45, 85, 0.15);
+    }
   </style>
 </head>
 <body>
 
+  <!-- GAME SELECTION -->
+  <div id="gameSelect" class="screen active">
+    <div class="logo">SHAME GAME</div>
+    <div class="subtitle">Choisis ton jeu</div>
+    <div style="display:flex;flex-direction:column;gap:16px;width:100%;max-width:340px;margin-top:30px;">
+      <div class="game-card" onclick="selectGame('original')">
+        <div class="game-card-icon">🎰</div>
+        <div class="game-card-title">Shame Original</div>
+        <div class="game-card-desc">Vérité, Action, Gorgées & Duels</div>
+      </div>
+      <div class="game-card" onclick="selectGame('pyramide')">
+        <div class="game-card-icon">🃏</div>
+        <div class="game-card-title">Shame Pyramide</div>
+        <div class="game-card-desc">Cartes, Bluff & Secrets</div>
+      </div>
+    </div>
+  </div>
+
   <!-- HOME -->
-  <div id="home" class="screen active">
+  <div id="home" class="screen">
     <div class="logo">SHAME GAME</div>
     <div class="subtitle">Le jeu qui met tes potes à nu</div>
     <div class="home-buttons">
@@ -673,6 +830,62 @@
     </div>
   </div>
 
+  <!-- PYRAMID: Memorize Cards -->
+  <div id="pyramidMemorize" class="screen">
+    <div class="logo" style="font-size:1.5rem;margin-top:30px;">SHAME PYRAMIDE</div>
+    <div class="section-title">Mémorise tes cartes !</div>
+    <div class="section-subtitle">Tu as 15 secondes</div>
+    <div class="timer-ring" id="memorizeTimerRing">
+      <svg viewBox="0 0 80 80">
+        <circle class="bg" cx="40" cy="40" r="36"/>
+        <circle class="progress" id="memorizeTimerProgress" cx="40" cy="40" r="36"/>
+      </svg>
+      <div class="timer-number" id="memorizeTimerNumber">15</div>
+    </div>
+    <div class="my-cards" id="memorizeCards"></div>
+  </div>
+
+  <!-- PYRAMID: Main Game -->
+  <div id="pyramidGame" class="screen">
+    <div class="logo" style="font-size:1.3rem;margin-top:20px;">SHAME PYRAMIDE</div>
+    <div id="pyramidDisplay" class="pyramid-container"></div>
+    <div class="section-subtitle" style="margin:10px 0 6px;">Tes cartes (mémorisées)</div>
+    <div class="my-cards face-down" id="myCardsDisplay"></div>
+    <div id="pyramidCurrentCard" style="display:none;text-align:center;margin:12px 0;">
+      <div class="section-subtitle">Carte retournée :</div>
+      <div class="pyramid-current-card" id="currentFlippedCard"></div>
+      <div class="section-subtitle" style="margin-top:8px;">Niveau <span id="currentLevel">1</span> — <span id="currentSips">1</span> gorgée(s)</div>
+    </div>
+    <div id="attackControls" style="display:none;text-align:center;margin:10px 0;">
+      <div class="section-subtitle">Sélectionne ta carte puis une victime</div>
+      <div class="attack-victims" id="attackVictims"></div>
+      <button class="btn btn-primary" id="sendAttackBtn" disabled style="max-width:280px;margin:10px auto;">Attaquer !</button>
+      <button class="btn btn-secondary" id="passAttackBtn" style="max-width:280px;margin:6px auto;">Passer</button>
+    </div>
+    <div id="hostFlipBtn" style="display:none;text-align:center;margin:10px 0;">
+      <button class="btn btn-primary" style="max-width:280px;margin:10px auto;" onclick="flipNextCard()">Retourner la carte suivante</button>
+    </div>
+    <div id="hostNextCardBtn" style="display:none;text-align:center;margin:10px 0;">
+      <button class="btn btn-primary" style="max-width:280px;margin:10px auto;" onclick="nextPyramidCard()">Carte suivante →</button>
+    </div>
+  </div>
+
+  <!-- PYRAMID: Attack overlay -->
+  <div class="reveal-overlay" id="pyramidAttackOverlay">
+    <div class="reveal-header" id="pyramidAttackHeader" style="color:var(--accent);">ATTAQUE !</div>
+    <div class="reveal-content" style="border-color:var(--accent);">
+      <div class="challenge-player" id="pyramidAttackMsg"></div>
+      <div class="section-subtitle" id="pyramidAttackLevel"></div>
+      <div class="challenge-buttons" id="pyramidAttackButtons"></div>
+    </div>
+  </div>
+
+  <!-- PYRAMID: Result overlay -->
+  <div class="reveal-overlay" id="pyramidResultOverlay">
+    <div class="reveal-header" id="pyramidResultHeader"></div>
+    <div class="reveal-content" id="pyramidResultContent"></div>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io({ reconnection: true, reconnectionAttempts: 50, reconnectionDelay: 1000, reconnectionDelayMax: 5000 });
@@ -681,6 +894,7 @@
     let roomCode = '';
     let isHost = false;
     let players = [];
+    let selectedGame = 'original';
     let secrets = [];
 
     const $ = id => document.getElementById(id);
@@ -698,6 +912,12 @@
       setTimeout(() => t.remove(), 3000);
     }
 
+    // =================== GAME SELECTION ===================
+    function selectGame(game) {
+      selectedGame = game;
+      showScreen('home');
+    }
+
     // =================== AUTO-RECONNECT ===================
     socket.on('connect', () => {
       // If we were in a game, auto-rejoin
@@ -705,6 +925,7 @@
         socket.emit('join-room', { roomCode, playerName: myName, gender: myGender }, (res) => {
           if (res.success) {
             players = res.players;
+            if (res.gameType) selectedGame = res.gameType;
             if (res.phase === 'game') {
               showScreen('game');
             } else if (res.phase === 'setup') {
@@ -731,10 +952,11 @@
       if (!myGender) { $('homeError').textContent = 'Choisis Garçon ou Fille !'; return; }
       myName = name;
       isHost = true;
-      socket.emit('create-room', { playerName: name, gender: myGender }, (res) => {
+      socket.emit('create-room', { playerName: name, gender: myGender, gameType: selectedGame }, (res) => {
         if (res.success) {
           roomCode = res.roomCode;
           players = res.players;
+          if (res.gameType) selectedGame = res.gameType;
           renderLobby();
           showScreen('lobby');
         }
@@ -752,6 +974,7 @@
         if (res.success) {
           roomCode = res.roomCode;
           players = res.players;
+          if (res.gameType) selectedGame = res.gameType;
           // Go to the right screen depending on the game phase
           if (res.phase === 'game') {
             showScreen('game');
@@ -803,6 +1026,8 @@
         players = data.players;
         renderSetup();
         showScreen('setup');
+      } else if (data.phase === 'pyramid-memorize') {
+        showPyramidMemorize();
       } else if (data.phase === 'game') {
         showScreen('game');
       }
@@ -1353,6 +1578,283 @@
 
     socket.on('player-disconnected', (data) => { showToast(`${data.playerName} s'est déconnecté`); });
     socket.on('room-closed', () => { showToast('La room a été fermée'); showScreen('home'); });
+
+    // =================== PYRAMID GAME ===================
+    let myPyramidCards = []; // my 3 cards
+    let pyramidData = []; // pyramid structure
+    let selectedHandCard = -1;
+    let selectedVictim = '';
+    let currentPyramidCard = null;
+    let currentPyramidLevel = 0;
+    let memorizeTimerInterval = null;
+
+    // Receive my 3 cards for memorization
+    socket.on('pyramid-your-cards', (data) => {
+      myPyramidCards = data.cards;
+    });
+
+    socket.on('pyramid-init', (data) => {
+      pyramidData = data.pyramid; // array of rows, each card has { flipped: false }
+      renderPyramid();
+    });
+
+    socket.on('pyramid-cards-hidden', () => {
+      showScreen('pyramidGame');
+      renderMyCardsFaceDown();
+      if (isHost) {
+        $('hostFlipBtn').style.display = 'block';
+        $('hostNextCardBtn').style.display = 'none';
+      }
+    });
+
+    socket.on('pyramid-card-flipped', (data) => {
+      // data: { row, col, card: { value, suit }, level }
+      currentPyramidCard = data.card;
+      currentPyramidLevel = data.level;
+      // Update pyramid display
+      if (pyramidData[data.row] && pyramidData[data.row][data.col]) {
+        pyramidData[data.row][data.col] = { ...data.card, flipped: true };
+      }
+      renderPyramid(data.row, data.col);
+      // Show current card info
+      $('pyramidCurrentCard').style.display = 'block';
+      const isRed = data.card.suit === '♥' || data.card.suit === '♦';
+      $('currentFlippedCard').className = 'pyramid-current-card' + (isRed ? ' red' : '');
+      $('currentFlippedCard').innerHTML = `<span class="card-value">${data.card.value}</span><span class="card-suit">${data.card.suit}</span>`;
+      $('currentLevel').textContent = data.level;
+      $('currentSips').textContent = data.level;
+      // Show attack controls for everyone
+      $('attackControls').style.display = 'block';
+      $('hostFlipBtn').style.display = 'none';
+      if (isHost) {
+        $('hostNextCardBtn').style.display = 'block';
+      }
+      selectedHandCard = -1;
+      selectedVictim = '';
+      $('sendAttackBtn').disabled = true;
+      renderAttackVictims();
+      renderMyCardsFaceDown();
+    });
+
+    socket.on('pyramid-attacked', (data) => {
+      // data: { attackerName, victimName, level }
+      $('attackControls').style.display = 'none';
+      if (data.victimName === myName) {
+        // I'm being attacked!
+        $('pyramidAttackOverlay').classList.add('active');
+        $('pyramidAttackMsg').textContent = `${data.attackerName} t'attaque !`;
+        $('pyramidAttackLevel').textContent = `Niveau ${data.level} — ${data.level} gorgée${data.level > 1 ? 's' : ''}`;
+        $('pyramidAttackButtons').innerHTML = `
+          <button class="btn btn-danger" onclick="respondAttack('accept')">Il a la carte (${data.level} gorgée${data.level > 1 ? 's' : ''})</button>
+          <button class="btn btn-success" onclick="respondAttack('bluff')">Bluff !</button>
+        `;
+      } else {
+        showToast(`${data.attackerName} attaque ${data.victimName} !`);
+      }
+    });
+
+    socket.on('pyramid-accept', (data) => {
+      // data: { victimName, sips }
+      $('pyramidAttackOverlay').classList.remove('active');
+      $('pyramidResultOverlay').classList.add('active');
+      $('pyramidResultHeader').textContent = 'ACCEPTÉ';
+      $('pyramidResultHeader').style.color = 'var(--accent)';
+      $('pyramidResultContent').innerHTML = `<div class="challenge-player">${data.victimName}</div><div style="font-size:2rem;margin:12px 0;">🍺</div><div class="section-title">${data.sips} gorgée${data.sips > 1 ? 's' : ''} !</div>`;
+      setTimeout(() => {
+        $('pyramidResultOverlay').classList.remove('active');
+        $('attackControls').style.display = 'block';
+      }, 3000);
+    });
+
+    socket.on('pyramid-bluff-fail', (data) => {
+      // Victim called bluff but attacker had the card
+      // data: { victimName, attackerName, sips, card }
+      $('pyramidAttackOverlay').classList.remove('active');
+      $('pyramidResultOverlay').classList.add('active');
+      $('pyramidResultHeader').textContent = 'RATÉ !';
+      $('pyramidResultHeader').style.color = 'var(--danger)';
+      const isRed = data.card.suit === '♥' || data.card.suit === '♦';
+      $('pyramidResultContent').innerHTML = `
+        <div class="section-subtitle">${data.attackerName} avait bien la carte !</div>
+        <div class="hand-card ${isRed ? 'red' : ''}" style="margin:12px auto;cursor:default;"><span class="card-value">${data.card.value}</span><span class="card-suit">${data.card.suit}</span></div>
+        <div class="challenge-player">${data.victimName}</div>
+        <div style="font-size:2rem;margin:8px 0;">😱</div>
+        <div class="section-title">${data.sips} gorgées (double) !</div>
+      `;
+      setTimeout(() => {
+        $('pyramidResultOverlay').classList.remove('active');
+        $('attackControls').style.display = 'block';
+      }, 5000);
+    });
+
+    socket.on('pyramid-bluff-success', (data) => {
+      // Victim caught the bluff!
+      // data: { victimName, attackerName, sips, card, secret }
+      $('pyramidAttackOverlay').classList.remove('active');
+      $('pyramidResultOverlay').classList.add('active');
+      $('pyramidResultHeader').textContent = 'BLUFF RATÉ !';
+      $('pyramidResultHeader').style.color = 'var(--success)';
+      const isRed = data.card.suit === '♥' || data.card.suit === '♦';
+      let secretHtml = '';
+      if (data.secret) {
+        if (data.secret.type === 'photo') {
+          secretHtml = `<div style="margin-top:12px;"><div style="color:var(--danger);font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:2px;">SECRET DÉVOILÉ</div><img src="${data.secret.content}" style="max-width:100%;max-height:200px;border-radius:12px;margin-top:8px;"></div>`;
+        } else {
+          secretHtml = `<div style="margin-top:12px;"><div style="color:var(--danger);font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:2px;">SECRET DÉVOILÉ</div><div class="reveal-text">${data.secret.content}</div></div>`;
+        }
+      }
+      $('pyramidResultContent').innerHTML = `
+        <div class="section-subtitle">${data.victimName} a détecté le bluff !</div>
+        <div class="hand-card ${isRed ? 'red' : ''}" style="margin:12px auto;cursor:default;"><span class="card-value">${data.card.value}</span><span class="card-suit">${data.card.suit}</span></div>
+        <div class="challenge-player">${data.attackerName}</div>
+        <div style="font-size:2rem;margin:8px 0;">🤡</div>
+        <div class="section-title">${data.sips} gorgées (double) !</div>
+        ${secretHtml}
+      `;
+      setTimeout(() => {
+        $('pyramidResultOverlay').classList.remove('active');
+        $('attackControls').style.display = 'block';
+      }, data.secret ? 8000 : 5000);
+    });
+
+    socket.on('pyramid-ready-next', () => {
+      if (isHost) {
+        $('hostFlipBtn').style.display = 'block';
+        $('hostNextCardBtn').style.display = 'none';
+      }
+      $('attackControls').style.display = 'none';
+      $('pyramidCurrentCard').style.display = 'none';
+    });
+
+    socket.on('pyramid-game-over', () => {
+      $('pyramidCurrentCard').style.display = 'none';
+      $('attackControls').style.display = 'none';
+      $('hostFlipBtn').style.display = 'none';
+      $('hostNextCardBtn').style.display = 'none';
+      $('pyramidResultOverlay').classList.add('active');
+      $('pyramidResultHeader').textContent = 'FIN DE LA PYRAMIDE !';
+      $('pyramidResultHeader').style.color = 'var(--gold)';
+      $('pyramidResultContent').innerHTML = '<div style="font-size:3rem;margin:20px 0;">🏆</div><div class="section-title">La partie est terminée !</div>';
+    });
+
+    function showPyramidMemorize() {
+      showScreen('pyramidMemorize');
+      renderMemorizeCards();
+      startMemorizeTimer(15);
+    }
+
+    function renderMemorizeCards() {
+      const container = $('memorizeCards');
+      container.innerHTML = myPyramidCards.map((c, i) => {
+        const isRed = c.suit === '♥' || c.suit === '♦';
+        return `<div class="hand-card ${isRed ? 'red' : ''}"><span class="card-value">${c.value}</span><span class="card-suit">${c.suit}</span></div>`;
+      }).join('');
+    }
+
+    function startMemorizeTimer(seconds) {
+      if (memorizeTimerInterval) clearInterval(memorizeTimerInterval);
+      let remaining = seconds;
+      const circumference = 226;
+      const progress = $('memorizeTimerProgress');
+      const number = $('memorizeTimerNumber');
+      progress.style.transition = 'none';
+      progress.style.strokeDashoffset = '0';
+      progress.classList.remove('urgent');
+      number.classList.remove('urgent');
+      number.textContent = remaining;
+      progress.getBoundingClientRect();
+      progress.style.transition = 'stroke-dashoffset 1s linear';
+      memorizeTimerInterval = setInterval(() => {
+        remaining--;
+        number.textContent = remaining;
+        const offset = circumference * (1 - remaining / seconds);
+        progress.style.strokeDashoffset = offset;
+        if (remaining <= 3) { progress.classList.add('urgent'); number.classList.add('urgent'); }
+        if (remaining <= 0) { clearInterval(memorizeTimerInterval); memorizeTimerInterval = null; }
+      }, 1000);
+    }
+
+    function renderPyramid(highlightRow, highlightCol) {
+      const container = $('pyramidDisplay');
+      // Render rows from top (smallest) to bottom (largest) for visual pyramid
+      let html = '';
+      for (let r = pyramidData.length - 1; r >= 0; r--) {
+        html += '<div class="pyramid-row">';
+        for (let c = 0; c < pyramidData[r].length; c++) {
+          const card = pyramidData[r][c];
+          const isFlipped = card.flipped;
+          const isCurrent = (r === highlightRow && c === highlightCol);
+          const isRed = isFlipped && (card.suit === '♥' || card.suit === '♦');
+          html += `<div class="pyramid-card${isFlipped ? ' flipped' : ''}${isCurrent ? ' current' : ''}${isRed ? ' red' : ''}">`;
+          if (isFlipped) {
+            html += `<span style="font-size:0.6rem;">${card.value}${card.suit}</span>`;
+          } else {
+            html += '🂠';
+          }
+          html += '</div>';
+        }
+        html += '</div>';
+      }
+      container.innerHTML = html;
+    }
+
+    function renderMyCardsFaceDown() {
+      const container = $('myCardsDisplay');
+      container.innerHTML = myPyramidCards.map((c, i) => {
+        const sel = (i === selectedHandCard) ? ' selected' : '';
+        return `<div class="hand-card face-down${sel}" onclick="selectHandCard(${i})"><span class="card-value">?</span><span class="card-suit">?</span></div>`;
+      }).join('');
+    }
+
+    function selectHandCard(index) {
+      selectedHandCard = (selectedHandCard === index) ? -1 : index;
+      renderMyCardsFaceDown();
+      updateAttackBtn();
+    }
+
+    function renderAttackVictims() {
+      const others = players.filter(p => p.name !== myName);
+      $('attackVictims').innerHTML = others.map(p => {
+        const sel = (p.name === selectedVictim) ? ' selected' : '';
+        return `<button class="victim-btn${sel}" onclick="selectVictim('${p.name}')">${p.name}</button>`;
+      }).join('');
+    }
+
+    function selectVictim(name) {
+      selectedVictim = (selectedVictim === name) ? '' : name;
+      renderAttackVictims();
+      updateAttackBtn();
+    }
+
+    function updateAttackBtn() {
+      $('sendAttackBtn').disabled = !(selectedHandCard >= 0 && selectedVictim);
+    }
+
+    $('sendAttackBtn').onclick = () => {
+      if (selectedHandCard < 0 || !selectedVictim) return;
+      socket.emit('pyramid-attack', { roomCode, cardIndex: selectedHandCard, victimName: selectedVictim });
+      $('attackControls').style.display = 'none';
+      selectedHandCard = -1;
+      selectedVictim = '';
+    };
+
+    $('passAttackBtn').onclick = () => {
+      $('attackControls').style.display = 'none';
+      showToast('Tu passes');
+    };
+
+    function respondAttack(response) {
+      socket.emit('pyramid-respond', { roomCode, response });
+      $('pyramidAttackOverlay').classList.remove('active');
+    }
+
+    function flipNextCard() {
+      socket.emit('pyramid-flip-card', roomCode);
+    }
+
+    function nextPyramidCard() {
+      socket.emit('pyramid-next-card', roomCode);
+    }
   </script>
 </body>
 </html>
