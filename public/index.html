@@ -603,29 +603,43 @@
     .pyramid-current-card .card-value { font-size: 1.8rem; }
     .pyramid-current-card .card-suit { font-size: 1.3rem; }
 
-    .attack-victims {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: center;
-      margin: 10px 0;
+    .pyramid-wrapper {
+      position: relative;
+      display: inline-block;
+      padding: 40px 50px;
     }
-    .victim-btn {
-      padding: 10px 16px;
-      border: 2px solid #2a2a4a;
-      border-radius: 14px;
+    .player-bubble {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
       background: var(--card);
+      border: 2px solid #2a2a4a;
       color: var(--text);
       font-family: 'Poppins', sans-serif;
-      font-size: 0.9rem;
-      font-weight: 600;
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.25s;
+      z-index: 5;
+      text-transform: uppercase;
     }
-    .victim-btn.selected {
+    .player-bubble:active { transform: scale(0.9); }
+    .player-bubble.selected {
       border-color: var(--accent);
-      background: rgba(255, 45, 85, 0.15);
+      background: rgba(255, 45, 85, 0.25);
+      box-shadow: 0 0 14px rgba(255, 45, 85, 0.5);
+      transform: scale(1.15);
     }
+    .player-bubble.disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+    .attack-victims { display: none; }
+    .victim-btn { display: none; }
   </style>
 </head>
 <body>
@@ -848,19 +862,20 @@
   <!-- PYRAMID: Main Game -->
   <div id="pyramidGame" class="screen">
     <div class="logo" style="font-size:1.3rem;margin-top:20px;">SHAME PYRAMIDE</div>
-    <div id="pyramidDisplay" class="pyramid-container"></div>
-    <div class="section-subtitle" style="margin:10px 0 6px;">Tes cartes (mémorisées)</div>
-    <div class="my-cards face-down" id="myCardsDisplay"></div>
-    <div id="pyramidCurrentCard" style="display:none;text-align:center;margin:12px 0;">
-      <div class="section-subtitle">Carte retournée :</div>
-      <div class="pyramid-current-card" id="currentFlippedCard"></div>
-      <div class="section-subtitle" style="margin-top:8px;">Niveau <span id="currentLevel">1</span> — <span id="currentSips">1</span> gorgée(s)</div>
+    <div class="pyramid-wrapper" id="pyramidWrapper">
+      <div id="pyramidDisplay" class="pyramid-container"></div>
+      <div id="playerBubbles"></div>
     </div>
-    <div id="attackControls" style="display:none;text-align:center;margin:10px 0;">
-      <div class="section-subtitle">Sélectionne ta carte puis une victime</div>
+    <div id="pyramidCurrentCard" style="display:none;text-align:center;margin:8px 0;">
+      <div class="pyramid-current-card" id="currentFlippedCard"></div>
+      <div class="section-subtitle" style="margin-top:6px;">Niveau <span id="currentLevel">1</span> — <span id="currentSips">1</span> gorgée(s)</div>
+    </div>
+    <div class="section-subtitle" style="margin:6px 0 4px;" id="attackHint"></div>
+    <div class="my-cards face-down" id="myCardsDisplay"></div>
+    <div id="attackControls" style="display:none;">
       <div class="attack-victims" id="attackVictims"></div>
-      <button class="btn btn-primary" id="sendAttackBtn" disabled style="max-width:280px;margin:10px auto;">Attaquer !</button>
-      <button class="btn btn-secondary" id="passAttackBtn" style="max-width:280px;margin:6px auto;">Passer</button>
+      <button class="btn btn-primary" id="sendAttackBtn" disabled style="display:none;">Attaquer !</button>
+      <button class="btn btn-secondary" id="passAttackBtn" style="display:none;">Passer</button>
     </div>
     <div id="hostFlipBtn" style="display:none;text-align:center;margin:10px 0;">
       <button class="btn btn-primary" style="max-width:280px;margin:10px auto;" onclick="flipNextCard()">Retourner la carte suivante</button>
@@ -1600,7 +1615,9 @@
 
     socket.on('pyramid-cards-hidden', () => {
       showScreen('pyramidGame');
+      canAttack = false;
       renderMyCardsFaceDown();
+      renderPlayerBubbles();
       if (isHost) {
         $('hostFlipBtn').style.display = 'block';
         $('hostNextCardBtn').style.display = 'none';
@@ -1623,22 +1640,24 @@
       $('currentFlippedCard').innerHTML = `<span class="card-value">${data.card.value}</span><span class="card-suit">${data.card.suit}</span>`;
       $('currentLevel').textContent = data.level;
       $('currentSips').textContent = data.level;
-      // Show attack controls for everyone
-      $('attackControls').style.display = 'block';
+      // Enable attack mode
+      canAttack = true;
       $('hostFlipBtn').style.display = 'none';
       if (isHost) {
         $('hostNextCardBtn').style.display = 'block';
       }
       selectedHandCard = -1;
       selectedVictim = '';
-      $('sendAttackBtn').disabled = true;
-      renderAttackVictims();
+      renderPlayerBubbles();
       renderMyCardsFaceDown();
+      updateAttackHint();
     });
 
     socket.on('pyramid-attacked', (data) => {
       // data: { attackerName, victimName, level }
-      $('attackControls').style.display = 'none';
+      canAttack = false;
+      updateBubbles();
+      $('attackHint').textContent = '';
       if (data.victimName === myName) {
         // I'm being attacked!
         $('pyramidAttackOverlay').classList.add('active');
@@ -1662,13 +1681,13 @@
       $('pyramidResultContent').innerHTML = `<div class="challenge-player">${data.victimName}</div><div style="font-size:2rem;margin:12px 0;">🍺</div><div class="section-title">${data.sips} gorgée${data.sips > 1 ? 's' : ''} !</div>`;
       setTimeout(() => {
         $('pyramidResultOverlay').classList.remove('active');
-        $('attackControls').style.display = 'block';
+        canAttack = true;
+        selectedHandCard = -1; selectedVictim = '';
+        renderPlayerBubbles(); renderMyCardsFaceDown(); updateAttackHint();
       }, 3000);
     });
 
     socket.on('pyramid-bluff-fail', (data) => {
-      // Victim called bluff but attacker had the card
-      // data: { victimName, attackerName, sips, card }
       $('pyramidAttackOverlay').classList.remove('active');
       $('pyramidResultOverlay').classList.add('active');
       $('pyramidResultHeader').textContent = 'RATÉ !';
@@ -1683,13 +1702,13 @@
       `;
       setTimeout(() => {
         $('pyramidResultOverlay').classList.remove('active');
-        $('attackControls').style.display = 'block';
+        canAttack = true;
+        selectedHandCard = -1; selectedVictim = '';
+        renderPlayerBubbles(); renderMyCardsFaceDown(); updateAttackHint();
       }, 5000);
     });
 
     socket.on('pyramid-bluff-success', (data) => {
-      // Victim caught the bluff!
-      // data: { victimName, attackerName, sips, card, secret }
       $('pyramidAttackOverlay').classList.remove('active');
       $('pyramidResultOverlay').classList.add('active');
       $('pyramidResultHeader').textContent = 'BLUFF RATÉ !';
@@ -1713,22 +1732,28 @@
       `;
       setTimeout(() => {
         $('pyramidResultOverlay').classList.remove('active');
-        $('attackControls').style.display = 'block';
+        canAttack = true;
+        selectedHandCard = -1; selectedVictim = '';
+        renderPlayerBubbles(); renderMyCardsFaceDown(); updateAttackHint();
       }, data.secret ? 8000 : 5000);
     });
 
     socket.on('pyramid-ready-next', () => {
+      canAttack = false;
       if (isHost) {
         $('hostFlipBtn').style.display = 'block';
         $('hostNextCardBtn').style.display = 'none';
       }
-      $('attackControls').style.display = 'none';
+      updateBubbles();
       $('pyramidCurrentCard').style.display = 'none';
+      $('attackHint').textContent = '';
     });
 
     socket.on('pyramid-game-over', () => {
+      canAttack = false;
       $('pyramidCurrentCard').style.display = 'none';
-      $('attackControls').style.display = 'none';
+      $('attackHint').textContent = '';
+      updateBubbles();
       $('hostFlipBtn').style.display = 'none';
       $('hostNextCardBtn').style.display = 'none';
       $('pyramidResultOverlay').classList.add('active');
@@ -1798,50 +1823,104 @@
       container.innerHTML = html;
     }
 
+    let canAttack = false;
+
     function renderMyCardsFaceDown() {
       const container = $('myCardsDisplay');
       container.innerHTML = myPyramidCards.map((c, i) => {
         const sel = (i === selectedHandCard) ? ' selected' : '';
-        return `<div class="hand-card face-down${sel}" onclick="selectHandCard(${i})"><span class="card-value">?</span><span class="card-suit">?</span></div>`;
+        const clickable = canAttack ? ` onclick="selectHandCard(${i})"` : '';
+        return `<div class="hand-card face-down${sel}"${clickable}><span class="card-value">?</span><span class="card-suit">?</span></div>`;
       }).join('');
     }
 
     function selectHandCard(index) {
+      if (!canAttack) return;
       selectedHandCard = (selectedHandCard === index) ? -1 : index;
       renderMyCardsFaceDown();
-      updateAttackBtn();
+      updateBubbles();
+      updateAttackHint();
+      tryAutoAttack();
     }
 
-    function renderAttackVictims() {
+    function renderPlayerBubbles() {
       const others = players.filter(p => p.name !== myName);
-      $('attackVictims').innerHTML = others.map(p => {
+      const count = others.length;
+      const container = $('playerBubbles');
+      if (!container) return;
+      // Position bubbles around the pyramid wrapper
+      // Spread them on right and left sides
+      const positions = [];
+      const wrapperEl = $('pyramidWrapper');
+      const wH = wrapperEl.offsetHeight || 280;
+      const wW = wrapperEl.offsetWidth || 300;
+      for (let i = 0; i < count; i++) {
+        const side = i % 2 === 0 ? 'right' : 'left';
+        const vertIndex = Math.floor(i / 2);
+        const topOffset = 30 + vertIndex * 56;
+        positions.push({ side, top: topOffset });
+      }
+      container.innerHTML = others.map((p, i) => {
+        const pos = positions[i] || { side: 'right', top: 30 + i * 56 };
+        const xStyle = pos.side === 'right' ? 'right:-24px;' : 'left:-24px;';
         const sel = (p.name === selectedVictim) ? ' selected' : '';
-        return `<button class="victim-btn${sel}" onclick="selectVictim('${p.name}')">${p.name}</button>`;
+        const dis = canAttack ? '' : ' disabled';
+        const initial = p.name.charAt(0).toUpperCase();
+        return `<div class="player-bubble${sel}${dis}" style="top:${pos.top}px;${xStyle}" onclick="selectVictim('${p.name}')" title="${p.name}">${initial}</div>`;
       }).join('');
     }
 
+    function updateBubbles() {
+      const bubbles = document.querySelectorAll('.player-bubble');
+      bubbles.forEach(b => {
+        const name = b.getAttribute('title');
+        b.classList.toggle('selected', name === selectedVictim);
+        b.classList.toggle('disabled', !canAttack);
+      });
+    }
+
     function selectVictim(name) {
+      if (!canAttack) return;
       selectedVictim = (selectedVictim === name) ? '' : name;
-      renderAttackVictims();
-      updateAttackBtn();
+      updateBubbles();
+      updateAttackHint();
+      tryAutoAttack();
+    }
+
+    function updateAttackHint() {
+      const hint = $('attackHint');
+      if (!canAttack) { hint.textContent = ''; return; }
+      if (selectedHandCard < 0 && !selectedVictim) {
+        hint.textContent = 'Choisis une carte puis un joueur pour attaquer';
+      } else if (selectedHandCard >= 0 && !selectedVictim) {
+        hint.textContent = 'Maintenant choisis un joueur →';
+      } else if (selectedHandCard < 0 && selectedVictim) {
+        hint.textContent = 'Choisis une de tes cartes ↓';
+      } else {
+        hint.textContent = '';
+      }
+    }
+
+    function tryAutoAttack() {
+      if (selectedHandCard >= 0 && selectedVictim && canAttack) {
+        canAttack = false;
+        socket.emit('pyramid-attack', { roomCode, cardIndex: selectedHandCard, victimName: selectedVictim });
+        $('attackControls').style.display = 'none';
+        selectedHandCard = -1;
+        selectedVictim = '';
+        updateBubbles();
+        renderMyCardsFaceDown();
+        $('attackHint').textContent = '';
+      }
+    }
+
+    function renderAttackVictims() {
+      // Legacy — bubbles handle this now
     }
 
     function updateAttackBtn() {
-      $('sendAttackBtn').disabled = !(selectedHandCard >= 0 && selectedVictim);
+      // Legacy — auto-attack handles this now
     }
-
-    $('sendAttackBtn').onclick = () => {
-      if (selectedHandCard < 0 || !selectedVictim) return;
-      socket.emit('pyramid-attack', { roomCode, cardIndex: selectedHandCard, victimName: selectedVictim });
-      $('attackControls').style.display = 'none';
-      selectedHandCard = -1;
-      selectedVictim = '';
-    };
-
-    $('passAttackBtn').onclick = () => {
-      $('attackControls').style.display = 'none';
-      showToast('Tu passes');
-    };
 
     function respondAttack(response) {
       socket.emit('pyramid-respond', { roomCode, response });

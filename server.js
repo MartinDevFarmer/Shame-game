@@ -448,7 +448,7 @@ function startPyramidGame(room) {
     room.pyramid.push(rowCards);
   }
 
-  room.pyramidRow = 4; // Start at top (1 card)
+  room.pyramidRow = 0; // Start at bottom (5 cards)
   room.pyramidCol = 0;
   room.pyramidPhase = 'waiting-attack';
 
