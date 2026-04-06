@@ -901,9 +901,9 @@
     let timerInterval = null;
     let pendingResult = null;
 
-    const categories = ['Vérité', 'Action', 'Shot', 'Gorgée', 'Duel'];
-    const catClasses = { 'Vérité': 'cat-question', 'Action': 'cat-dare', 'Shot': 'cat-shot', 'Gorgée': 'cat-gorgee', 'Duel': 'cat-duel' };
-    const catMap = { question: 'Vérité', dare: 'Action', shot: 'Shot', gorgee: 'Gorgée', duel: 'Duel' };
+    const categories = ['Vérité', 'Action', 'Gorgée', 'Duel'];
+    const catClasses = { 'Vérité': 'cat-question', 'Action': 'cat-dare', 'Gorgée': 'cat-gorgee', 'Duel': 'cat-duel' };
+    const catMap = { question: 'Vérité', dare: 'Action', gorgee: 'Gorgée', duel: 'Duel' };
 
     function hideAllGameSections() {
       $('spinSection').style.display = 'none';
@@ -1304,7 +1304,7 @@
       } else {
         body.innerHTML = `<div class="reveal-text">${data.secret.content}</div>`;
       }
-      $('revealBy').textContent = `Balancé par ${data.secret.submittedBy}`;
+      $('revealBy').textContent = `Dévoilé par Anonyme`;
     });
 
     // No secrets left → penalty: drink sips, then host clicks next
